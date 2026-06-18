@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Camera, Image, Languages, ArrowLeftRight, Flashlight, Volume2, Type, CheckCheck } from 'lucide-react';
+import {
+  ArrowLeft, Camera, Type, Languages, ArrowLeftRight, Flashlight,
+  Volume2, Copy, CheckCheck, AlertCircle,
+} from 'lucide-react';
+import { useCamera } from '../../hooks/useCamera';
+import { useOCR } from '../../hooks/useOCR';
+import { translateText } from '../../utils/translate';
 
 interface TranslationModeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
@@ -20,23 +26,7 @@ const LANGUAGES = [
   { code: 'ru', name: 'Russian', flag: '🇷🇺' },
 ];
 
-// Mock translation dictionary — produces plausible results
-const MOCK_TRANSLATIONS: Record<string, Record<string, string>> = {
-  "Hello, how are you?": { es: "¡Hola! ¿Cómo estás?", fr: "Bonjour, comment allez-vous?", de: "Hallo, wie geht es Ihnen?", ja: "こんにちは、お元気ですか？", zh: "你好，你好吗？", ar: "مرحبا كيف حالك؟", ru: "Привет, как дела?" },
-  "Welcome to our restaurant.": { es: "Bienvenidos a nuestro restaurante.", fr: "Bienvenue dans notre restaurant.", de: "Willkommen in unserem Restaurant.", ja: "当店へようこそ。", zh: "欢迎光临我们的餐厅。", ar: "مرحباً بكم في مطعمنا.", ru: "Добро пожаловать в наш ресторан." },
-};
-
-function mockTranslate(text: string, from: string, to: string): string {
-  if (from === to) return text;
-  for (const [src, targets] of Object.entries(MOCK_TRANSLATIONS)) {
-    if (text.toLowerCase().includes(src.toLowerCase()) && targets[to]) return targets[to];
-  }
-  // Generic fallback: prefix with language name
-  const lang = LANGUAGES.find(l => l.code === to);
-  return `[${lang?.name ?? to}] ${text}`;
-}
-
-type InputMode = 'camera' | 'photo' | 'text';
+type InputMode = 'camera' | 'text';
 
 interface RecentItem { from: string; to: string; text: string; time: string }
 
@@ -48,36 +38,60 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
   const [originalText, setOriginalText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [typedText, setTypedText] = useState('');
+  const [translateError, setTranslateError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentItem[]>([
     { from: '🇬🇧', to: '🇪🇸', text: 'Hello, how are you?', time: '2 min ago' },
     { from: '🇫🇷', to: '🇬🇧', text: 'Bonjour mon ami', time: '15 min ago' },
-    { from: '🇯🇵', to: '🇬🇧', text: 'ありがとうございます', time: '1 hour ago' },
   ]);
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2000); };
+  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
+  const { status: ocrStatus, progress, recognize } = useOCR();
 
-  const handleTranslate = () => {
-    const src = inputMode === 'text' ? typedText.trim() : "Welcome to our restaurant. Today's special is fresh seafood pasta.";
-    if (!src) { showToast('Enter text first'); return; }
+  useEffect(() => {
+    if (inputMode === 'camera') startCamera();
+    else stopCamera();
+  }, [inputMode, startCamera, stopCamera]);
+
+  useEffect(() => () => stopCamera(), [stopCamera]);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
+
+  const runTranslation = async (src: string) => {
+    if (!src.trim()) { showToast('Nothing to translate'); return; }
     setIsTranslating(true);
-    setTimeout(() => {
-      const result = mockTranslate(src, sourceLang, targetLang);
-      setOriginalText(src);
+    setTranslateError(null);
+    setOriginalText(src);
+    setTranslatedText('');
+    try {
+      const result = await translateText(src, sourceLang, targetLang);
       setTranslatedText(result);
       const srcFlag = LANGUAGES.find(l => l.code === sourceLang)?.flag ?? '';
       const tgtFlag = LANGUAGES.find(l => l.code === targetLang)?.flag ?? '';
       setRecent(prev => [{ from: srcFlag, to: tgtFlag, text: src.slice(0, 40), time: 'just now' }, ...prev.slice(0, 4)]);
+    } catch (e: any) {
+      setTranslateError(e?.message ?? 'Translation failed');
+    } finally {
       setIsTranslating(false);
-    }, 1200);
+    }
   };
+
+  const handleCameraTranslate = async () => {
+    const canvas = captureFrame();
+    if (!canvas) { showToast('Camera not ready'); return; }
+    const text = await recognize(canvas);
+    if (!text) { showToast('No text detected in image'); return; }
+    await runTranslation(text);
+  };
+
+  const handleTextTranslate = () => runTranslation(typedText);
 
   const swapLanguages = () => {
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
     setOriginalText(translatedText);
     setTranslatedText(originalText);
-    setTypedText(translatedText || typedText);
+    if (inputMode === 'text') setTypedText(translatedText || typedText);
   };
 
   const speakText = (text: string, langCode: string) => {
@@ -86,7 +100,6 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = langCode;
     window.speechSynthesis.speak(utt);
-    showToast('Reading aloud…');
   };
 
   const copyText = async (text: string) => {
@@ -94,11 +107,8 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
     showToast('Copied!');
   };
 
-  const tabs: { val: InputMode; Icon: any; label: string }[] = [
-    { val: 'camera', Icon: Camera, label: 'Camera' },
-    { val: 'photo', Icon: Image, label: 'Photo' },
-    { val: 'text', Icon: Type, label: 'Type' },
-  ];
+  const isOcrRunning = ocrStatus === 'running';
+  const isBusy = isOcrRunning || isTranslating;
 
   return (
     <motion.div
@@ -116,7 +126,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
             className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 text-sm font-semibold whitespace-nowrap"
             style={{ color: theme.textColor }}
           >
-            <CheckCheck className="w-4 h-4 text-purple-400" />
+            <CheckCheck className="w-4 h-4 text-blue-400" />
             {toast}
           </motion.div>
         )}
@@ -135,7 +145,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
           </Link>
           <div>
             <h2 className="text-xl font-semibold">Translation Mode</h2>
-            <p className="text-xs opacity-70">Real-time Translation</p>
+            <p className="text-xs opacity-70">OCR + Real-time Translation</p>
           </div>
         </div>
         <motion.button
@@ -156,12 +166,12 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
           className="p-4"
         >
           <div className="flex gap-1 p-1 rounded-xl bg-white/5">
-            {tabs.map(({ val, Icon, label }) => (
+            {([{ val: 'camera', Icon: Camera, label: 'Camera' }, { val: 'text', Icon: Type, label: 'Type' }] as const).map(({ val, Icon, label }) => (
               <motion.button
                 key={val}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setInputMode(val)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm ${inputMode === val ? 'bg-purple-500 text-white' : 'hover:bg-white/10'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm ${inputMode === val ? 'bg-blue-500 text-white' : 'hover:bg-white/10'}`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>
@@ -178,7 +188,12 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
           className="px-4 mb-4"
         >
           <div className="flex items-center gap-2">
-            <select value={sourceLang} onChange={e => setSourceLang(e.target.value)} className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none" style={{ color: theme.textColor }}>
+            <select
+              value={sourceLang}
+              onChange={e => setSourceLang(e.target.value)}
+              className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none text-sm"
+              style={{ color: theme.textColor }}
+            >
               {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.name}</option>)}
             </select>
             <motion.button
@@ -189,7 +204,12 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
             >
               <ArrowLeftRight className="w-5 h-5" />
             </motion.button>
-            <select value={targetLang} onChange={e => setTargetLang(e.target.value)} className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none" style={{ color: theme.textColor }}>
+            <select
+              value={targetLang}
+              onChange={e => setTargetLang(e.target.value)}
+              className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none text-sm"
+              style={{ color: theme.textColor }}
+            >
               {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.name}</option>)}
             </select>
           </div>
@@ -201,7 +221,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
             <motion.div
               key="text"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.3 }}
               className="px-4 mb-4"
             >
               <textarea
@@ -209,48 +229,93 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
                 onChange={e => setTypedText(e.target.value)}
                 placeholder="Type or paste text to translate…"
                 rows={4}
-                className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 outline-none resize-none text-sm leading-relaxed focus:border-purple-500/50 transition-colors"
+                className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 outline-none resize-none text-sm leading-relaxed focus:border-blue-500/50 transition-colors"
                 style={{ color: theme.textColor }}
               />
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={handleTranslate}
-                disabled={isTranslating || !typedText.trim()}
-                className="w-full mt-3 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
+                onClick={handleTextTranslate}
+                disabled={isBusy || !typedText.trim()}
+                className="w-full mt-3 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
               >
-                {isTranslating ? 'Translating…' : 'Translate'}
+                {isBusy ? 'Translating…' : 'Translate'}
               </motion.button>
             </motion.div>
           ) : (
             <motion.div
               key="camera"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.3 }}
               className="px-4 mb-4"
             >
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                {isTranslating ? (
-                  <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-lg" style={{ color: theme.textColor }}>Translating…</p>
-                  </div>
-                ) : (
-                  <div className="text-center p-6">
-                    <Languages className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="opacity-70" style={{ color: theme.textColor }}>
-                      {inputMode === 'camera' ? 'Point camera at text' : 'Upload a photo'}
-                    </p>
-                  </div>
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+                <video
+                  ref={videoRef}
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ display: camStatus === 'active' ? 'block' : 'none' }}
+                />
+
+                <AnimatePresence mode="wait">
+                  {camStatus === 'requesting' && (
+                    <motion.div key="req" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center z-10">
+                      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                      <p className="text-sm opacity-70">Requesting camera…</p>
+                    </motion.div>
+                  )}
+                  {camStatus === 'error' && (
+                    <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-6 z-10">
+                      <AlertCircle className="w-12 h-12 mx-auto mb-3 text-red-400" />
+                      <p className="text-sm text-red-400">{camError}</p>
+                    </motion.div>
+                  )}
+                  {isBusy && (
+                    <motion.div key="busy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
+                      <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="text-sm font-semibold">
+                        {isOcrRunning ? `Reading text… ${progress}%` : 'Translating…'}
+                      </p>
+                    </motion.div>
+                  )}
+                  {camStatus === 'idle' && !isBusy && (
+                    <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-6 z-10">
+                      <Languages className="w-16 h-16 mx-auto mb-4 opacity-40" />
+                      <p className="opacity-60">Point camera at text</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {camStatus === 'active' && !isBusy && (
+                  <div className="absolute inset-8 border-2 border-blue-500/50 rounded-xl pointer-events-none z-20" />
                 )}
               </div>
+
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={handleTranslate}
-                disabled={isTranslating}
-                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+                onClick={handleCameraTranslate}
+                disabled={isBusy || camStatus !== 'active'}
+                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
               >
-                {inputMode === 'camera' ? 'Translate Now' : 'Upload & Translate'}
+                {isBusy ? (isOcrRunning ? `Scanning… ${progress}%` : 'Translating…') : 'Capture & Translate'}
               </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error */}
+        <AnimatePresence>
+          {translateError && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 mb-4 overflow-hidden"
+            >
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {translateError}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -271,7 +336,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
               ].map(({ label, text, lang, gradient }) => (
                 <div
                   key={label}
-                  className={`p-4 rounded-xl border ${gradient ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30' : 'bg-white/5 border-white/10'}`}
+                  className={`p-4 rounded-xl border ${gradient ? 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30' : 'bg-white/5 border-white/10'}`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold opacity-70 uppercase">
@@ -282,7 +347,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
                         <Volume2 className="w-4 h-4" />
                       </motion.button>
                       <motion.button whileTap={{ scale: 0.85 }} onClick={() => copyText(text)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-                        <CheckCheck className="w-4 h-4" />
+                        <Copy className="w-4 h-4" />
                       </motion.button>
                     </div>
                   </div>

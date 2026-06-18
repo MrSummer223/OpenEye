@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Camera, Save, Copy, Share2, Trash2, Flashlight, CheckCheck, X } from 'lucide-react';
+import { ArrowLeft, Camera, Save, Copy, Share2, Trash2, Flashlight, CheckCheck, X, AlertCircle } from 'lucide-react';
 import type { Scan } from '../App';
+import { useCamera } from '../../hooks/useCamera';
+import { useOCR } from '../../hooks/useOCR';
 
 interface ScanModeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
@@ -14,32 +16,34 @@ interface ScanModeProps {
 
 const slideUp = { initial: { y: 20, opacity: 0 }, animate: { y: 0, opacity: 1 } };
 
-const MOCK_RESULTS = [
-  "Chapter 12: Quantum Mechanics\n\nThe wave-particle duality is a fundamental concept in quantum mechanics. It states that every particle or quantum entity may be described as either a particle or a wave. This principle is illustrated by the double-slit experiment, which demonstrates how light and matter can display characteristics of both classically defined waves and particles.",
-  "Meeting Agenda — June 14, 2026\n\n1. Q2 Review (15 min)\n2. Product roadmap update\n3. Team sync on deployment\n4. Open discussion\n\nNext meeting: June 21, 2026 at 10:00 AM",
-  "Ingredients:\n• 200g spaghetti\n• 100g pancetta\n• 2 large eggs\n• 50g Pecorino Romano\n• 2 cloves garlic\n• Black pepper to taste\n\nCook pasta al dente. Fry pancetta until crispy...",
-];
-
 export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, setSavedScans }: ScanModeProps) {
-  const [isScanning, setIsScanning] = useState(false);
   const [scannedText, setScannedText] = useState('');
   const [toast, setToast] = useState<string | null>(null);
-  const [scanIndex, setScanIndex] = useState(0);
+  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
+  const { status: ocrStatus, progress, error: ocrError, recognize } = useOCR();
+
+  const isScanning = ocrStatus === 'running';
+
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2200);
   };
 
-  const handleScan = () => {
-    setIsScanning(true);
+  const handleScan = async () => {
+    const canvas = captureFrame();
+    if (!canvas) { showToast('Camera not ready'); return; }
     setScannedText('');
-    setTimeout(() => {
-      const text = MOCK_RESULTS[scanIndex % MOCK_RESULTS.length];
+    const text = await recognize(canvas);
+    if (text) {
       setScannedText(text);
-      setScanIndex(i => i + 1);
-      setIsScanning(false);
-    }, 2000);
+    } else {
+      showToast(ocrError ?? 'No text detected');
+    }
   };
 
   const handleSave = () => {
@@ -50,7 +54,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
       { id: Date.now(), text: scannedText.slice(0, 70) + (scannedText.length > 70 ? '…' : ''), date: new Date().toISOString().split('T')[0] },
       ...savedScans,
     ]);
-    showToast('Saved ✓');
+    showToast('Saved');
   };
 
   const handleCopy = async () => {
@@ -76,10 +80,6 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
   const handleDelete = (id: number) => {
     setSavedScans(savedScans.filter(s => s.id !== id));
     showToast('Deleted');
-  };
-
-  const handleClear = () => {
-    setScannedText('');
   };
 
   return (
@@ -119,7 +119,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
           </Link>
           <div>
             <h2 className="text-xl font-semibold">Scan Mode</h2>
-            <p className="text-xs opacity-70">AI Text Recognition</p>
+            <p className="text-xs opacity-70">OCR Text Recognition</p>
           </div>
         </div>
         <motion.button
@@ -138,39 +138,67 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
           transition={{ delay: 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="p-4"
         >
-          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+            {/* Live video */}
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ display: camStatus === 'active' ? 'block' : 'none' }}
+            />
+
+            {/* States over the video */}
             <AnimatePresence mode="wait">
-              {isScanning ? (
-                <motion.div
-                  key="scanning"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="text-center"
-                >
-                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-lg" style={{ color: theme.textColor }}>Analyzing text...</p>
+              {camStatus === 'requesting' && (
+                <motion.div key="req" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center z-10">
+                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-sm opacity-70">Requesting camera…</p>
                 </motion.div>
-              ) : (
-                <motion.div
-                  key="idle"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="text-center p-6"
-                >
-                  <Camera className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="opacity-70" style={{ color: theme.textColor }}>
-                    {scannedText ? 'Tap to scan again' : 'Position text in frame'}
-                  </p>
+              )}
+              {camStatus === 'error' && (
+                <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-6 z-10">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-3 text-red-400" />
+                  <p className="text-sm text-red-400 mb-1">Camera unavailable</p>
+                  <p className="text-xs opacity-60">{camError}</p>
+                </motion.div>
+              )}
+              {isScanning && (
+                <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
+                  <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-sm font-semibold">Analyzing text… {progress}%</p>
+                  <div className="w-32 h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                </motion.div>
+              )}
+              {camStatus === 'idle' && !isScanning && (
+                <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center p-6 z-10">
+                  <Camera className="w-16 h-16 mx-auto mb-4 opacity-40" />
+                  <p className="opacity-60 text-sm">Starting camera…</p>
                 </motion.div>
               )}
             </AnimatePresence>
-            {/* Scan corners */}
-            <div className="absolute inset-8 border-2 border-blue-500 rounded-xl pointer-events-none">
-              {[['top-0 left-0 border-t-4 border-l-4 -mt-1 -ml-1'],
-                ['top-0 right-0 border-t-4 border-r-4 -mt-1 -mr-1'],
-                ['bottom-0 left-0 border-b-4 border-l-4 -mb-1 -ml-1'],
-                ['bottom-0 right-0 border-b-4 border-r-4 -mb-1 -mr-1']].map(([cls], i) => (
-                <div key={i} className={`absolute w-6 h-6 border-blue-500 ${cls}`} />
-              ))}
-            </div>
+
+            {/* Scan corner guides */}
+            {camStatus === 'active' && (
+              <div className="absolute inset-8 border-2 border-blue-500/60 rounded-xl pointer-events-none z-20">
+                {[
+                  'top-0 left-0 border-t-4 border-l-4 -mt-1 -ml-1',
+                  'top-0 right-0 border-t-4 border-r-4 -mt-1 -mr-1',
+                  'bottom-0 left-0 border-b-4 border-l-4 -mb-1 -ml-1',
+                  'bottom-0 right-0 border-b-4 border-r-4 -mb-1 -mr-1',
+                ].map((cls, i) => (
+                  <div key={i} className={`absolute w-6 h-6 border-blue-400 ${cls}`} />
+                ))}
+                {/* Animated scan line */}
+                <motion.div
+                  className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent"
+                  animate={{ top: ['0%', '100%', '0%'] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                />
+              </div>
+            )}
           </div>
 
           <motion.button
@@ -178,10 +206,10 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
             transition={{ delay: 0.18, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             whileTap={{ scale: 0.96 }}
             onClick={handleScan}
-            disabled={isScanning}
+            disabled={isScanning || camStatus !== 'active'}
             className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
           >
-            {isScanning ? 'Scanning…' : scannedText ? 'Scan Again' : 'Start Scan'}
+            {isScanning ? `Scanning… ${progress}%` : scannedText ? 'Scan Again' : 'Capture & Scan'}
           </motion.button>
         </motion.div>
 
@@ -208,7 +236,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
                     <motion.button whileTap={{ scale: 0.85 }} onClick={handleShare} title="Share" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                       <Share2 className="w-4 h-4" />
                     </motion.button>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={handleClear} title="Clear" className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScannedText('')} title="Clear" className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
                       <X className="w-4 h-4" />
                     </motion.button>
                   </div>
@@ -251,7 +279,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-sm mb-1">{scan.text}</p>
+                      <p className="text-sm mb-1 line-clamp-2">{scan.text}</p>
                       <p className="text-xs opacity-50">{scan.date}</p>
                     </div>
                     <motion.button
