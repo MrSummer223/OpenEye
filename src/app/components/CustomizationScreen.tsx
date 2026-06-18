@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  ArrowLeft, Palette, Smartphone, Upload, Image, Type,
-  Grid3x3, Volume2, Sparkles, Shapes, Download, Star,
-  TrendingUp, Flame, ChevronRight, Check, Play, Search,
-  Bell, Crown, Zap, Shield, Wand2, Music, Monitor
-} from 'lucide-react';
+import { ArrowLeft, Palette, Smartphone, Upload, Image, Type, Grid3x3, Volume2, Sparkles, Shapes, Download, Star, TrendingUp, Flame, ChevronRight, Check, Play, Search, Bell, Crown, Zap, Shield, Wand as Wand2, Music, Monitor } from 'lucide-react';
 
 interface CustomizationScreenProps {
   theme: {
