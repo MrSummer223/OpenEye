@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X, LogOut, User, Cloud } from 'lucide-react';
+import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X, LogOut, User, Cloud, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
 interface SystemSettingsProps {
@@ -11,6 +11,7 @@ interface SystemSettingsProps {
   darkMode: boolean;
   setDarkMode: (v: boolean) => void;
   onOpenAuth?: () => void;
+  onLock?: () => void;
 }
 
 const SETTINGS = [
@@ -35,7 +36,7 @@ const DEVICE_INFO = [
   { label: 'Battery Health', value: 'Excellent', green: true },
 ];
 
-export function SystemSettings({ theme, brightness, setBrightness, darkMode, setDarkMode, onOpenAuth }: SystemSettingsProps) {
+export function SystemSettings({ theme, brightness, setBrightness, darkMode, setDarkMode, onOpenAuth, onLock }: SystemSettingsProps) {
   const { user, signOut } = useAuth();
   const [openPanel, setOpenPanel] = useState<string | null>(null);
   const [notifications, setNotifications] = useState(true);
@@ -68,15 +69,26 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
           <h2 className="text-xl font-semibold">System Settings</h2>
           <p className="text-xs opacity-70">Device Configuration</p>
         </div>
-        {user && (
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={signOut}
-            className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
-          >
-            <LogOut className="w-5 h-5" />
-          </motion.button>
-        )}
+        <div className="flex gap-2">
+          {onLock && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={onLock}
+              className="p-2 rounded-full bg-gradient-to-br from-gray-500/80 to-slate-500/80 hover:from-gray-500 hover:to-slate-500 text-white transition-colors shadow-lg"
+            >
+              <LockKeyhole className="w-5 h-5" />
+            </motion.button>
+          )}
+          {user && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={signOut}
+              className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
+            >
+              <LogOut className="w-5 h-5" />
+            </motion.button>
+          )}
+        </div>
       </motion.div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
