@@ -54,17 +54,17 @@ export function Home({ theme, flashlightOn, setFlashlightOn, savedScans }: HomeP
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={() => setFlashlightOn(!flashlightOn)}
-            className={`p-3 rounded-full transition-colors ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-white/10 hover:bg-white/20'}`}
+            className={`p-3 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
           >
             <Flashlight className="w-6 h-6" />
           </motion.button>
           <motion.div whileTap={{ scale: 0.88 }}>
-            <Link to="/customize" className="p-3 rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 transition-colors flex">
+            <Link to="/customize" className="p-3 rounded-full bg-gradient-to-br from-purple-500/80 to-pink-500/80 hover:from-purple-500 hover:to-pink-500 text-white transition-colors shadow-lg flex">
               <Palette className="w-6 h-6" />
             </Link>
           </motion.div>
           <motion.div whileTap={{ scale: 0.88 }}>
-            <Link to="/settings" className="p-3 rounded-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex">
+            <Link to="/settings" className="p-3 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg flex">
               <Settings className="w-6 h-6" />
             </Link>
           </motion.div>

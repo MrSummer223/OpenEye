@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Camera, Save, Copy, Share2, Trash2, Flashlight, CheckCheck, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Camera, Save, Copy, Share2, Trash2, Flashlight, CheckCheck, X, CircleAlert as AlertCircle } from 'lucide-react';
 import type { Scan } from '../App';
 import { useCamera } from '../../hooks/useCamera';
 import { useOCR } from '../../hooks/useOCR';
@@ -11,12 +11,13 @@ interface ScanModeProps {
   flashlightOn: boolean;
   setFlashlightOn: (v: boolean) => void;
   savedScans: Scan[];
-  setSavedScans: (scans: Scan[]) => void;
+  onSaveScan: (text: string) => Promise<boolean | void>;
+  onDeleteScan: (id: string) => Promise<void>;
 }
 
 const slideUp = { initial: { y: 20, opacity: 0 }, animate: { y: 0, opacity: 1 } };
 
-export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, setSavedScans }: ScanModeProps) {
+export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, onSaveScan, onDeleteScan }: ScanModeProps) {
   const [scannedText, setScannedText] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
@@ -46,15 +47,16 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!scannedText) return;
     const already = savedScans.some(s => s.text.startsWith(scannedText.slice(0, 40)));
     if (already) { showToast('Already saved'); return; }
-    setSavedScans([
-      { id: Date.now(), text: scannedText.slice(0, 70) + (scannedText.length > 70 ? '…' : ''), date: new Date().toISOString().split('T')[0] },
-      ...savedScans,
-    ]);
-    showToast('Saved');
+    const success = await onSaveScan(scannedText.slice(0, 500));
+    if (success !== false) {
+      showToast('Saved');
+    } else {
+      showToast('Failed to save');
+    }
   };
 
   const handleCopy = async () => {
@@ -77,8 +79,8 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
     }
   };
 
-  const handleDelete = (id: number) => {
-    setSavedScans(savedScans.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    await onDeleteScan(id);
     showToast('Deleted');
   };
 
@@ -114,7 +116,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
         className="flex items-center justify-between p-4 border-b border-white/10"
       >
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+          <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
@@ -125,7 +127,7 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, set
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={() => setFlashlightOn(!flashlightOn)}
-          className={`p-2 rounded-full transition-colors ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-white/10 hover:bg-white/20'}`}
+          className={`p-2 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>

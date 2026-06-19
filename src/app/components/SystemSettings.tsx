@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X } from 'lucide-react';
+import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X, LogOut } from 'lucide-react';
+import { useAuth } from '../../lib/auth';
 
 interface SystemSettingsProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
@@ -34,6 +35,7 @@ const DEVICE_INFO = [
 ];
 
 export function SystemSettings({ theme, brightness, setBrightness, darkMode, setDarkMode }: SystemSettingsProps) {
+  const { signOut } = useAuth();
   const [openPanel, setOpenPanel] = useState<string | null>(null);
   const [notifications, setNotifications] = useState(true);
   const [devMode, setDevMode] = useState(false);
@@ -58,16 +60,20 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
         transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center gap-3 p-4 border-b border-white/10"
       >
-        <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+        <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
           <ArrowLeft className="w-6 h-6" />
         </Link>
         <div className="flex-1">
           <h2 className="text-xl font-semibold">System Settings</h2>
           <p className="text-xs opacity-70">Device Configuration</p>
         </div>
-        <div className="p-2 rounded-full bg-blue-500/20">
-          <Settings2 className="w-5 h-5 text-blue-400" />
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={signOut}
+          className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
+        >
+          <LogOut className="w-5 h-5" />
+        </motion.button>
       </motion.div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">

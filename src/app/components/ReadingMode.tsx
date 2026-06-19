@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  ArrowLeft, Camera, FileText, Play, Pause, Volume2, VolumeX,
-  SkipBack, SkipForward, Flashlight, AlertCircle,
-} from 'lucide-react';
+import { ArrowLeft, Camera, FileText, Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Flashlight, CircleAlert as AlertCircle } from 'lucide-react';
 import { useCamera } from '../../hooks/useCamera';
 import { useOCR } from '../../hooks/useOCR';
 
@@ -117,7 +114,7 @@ export function ReadingMode({ theme, flashlightOn, setFlashlightOn }: ReadingMod
         className="flex items-center justify-between p-4 border-b border-white/10"
       >
         <div className="flex items-center gap-3">
-          <Link to="/" onClick={stopReading} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+          <Link to="/" onClick={stopReading} className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
@@ -128,7 +125,7 @@ export function ReadingMode({ theme, flashlightOn, setFlashlightOn }: ReadingMod
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={() => setFlashlightOn(!flashlightOn)}
-          className={`p-2 rounded-full transition-colors ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-white/10 hover:bg-white/20'}`}
+          className={`p-2 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>

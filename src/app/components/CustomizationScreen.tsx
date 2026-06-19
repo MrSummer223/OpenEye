@@ -11,6 +11,8 @@ interface CustomizationScreenProps {
     textColor: string;
   };
   setTheme: (theme: any) => void;
+  installedItems: Set<string>;
+  onToggleInstall: (itemId: string, itemType: string) => Promise<boolean | void>;
 }
 
 type Screen = 'splash' | 'home' | 'category';
@@ -118,12 +120,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
 };
 
-export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProps) {
+export function CustomizationScreen({ theme, setTheme, installedItems, onToggleInstall }: CustomizationScreenProps) {
   const [screen, setScreen] = useState<Screen>('splash');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'featured' | 'categories' | 'new'>('featured');
-  const [installed, setInstalled] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const t = setTimeout(() => setScreen('home'), 2200);
@@ -139,12 +140,8 @@ export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProp
     }
   };
 
-  const toggleInstall = (id: string) => {
-    setInstalled(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggleInstall = async (id: string, type: string = 'theme') => {
+    await onToggleInstall(id, type);
   };
 
   // ─── Splash ──────────────────────────────────────────────────────────────────
@@ -375,7 +372,7 @@ export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProp
       >
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-white/10">
-          <button onClick={() => setScreen('home')} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+          <button onClick={() => setScreen('home')} className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
@@ -412,18 +409,18 @@ export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProp
           transition={{ delay: 0.1, duration: 0.4 }}
           className="flex items-center gap-3 px-4 pt-4 pb-3"
         >
-          <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+          <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
             <p className="font-bold text-lg">OpenEye Store</p>
             <p className="text-xs opacity-40">Customization Catalog</p>
           </div>
-          <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
-            <Search className="w-5 h-5 opacity-60" />
+          <button className="p-2 rounded-full bg-gradient-to-br from-indigo-500/80 to-purple-500/80 hover:from-indigo-500 hover:to-purple-500 text-white transition-colors shadow-lg">
+            <Search className="w-5 h-5" />
           </button>
-          <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
-            <Bell className="w-5 h-5 opacity-60" />
+          <button className="p-2 rounded-full bg-gradient-to-br from-pink-500/80 to-rose-500/80 hover:from-pink-500 hover:to-rose-500 text-white transition-colors shadow-lg">
+            <Bell className="w-5 h-5" />
           </button>
         </motion.div>
 
@@ -493,11 +490,11 @@ export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProp
                         </div>
                       </div>
                       <button
-                        onClick={e => { e.stopPropagation(); toggleInstall(item.id); }}
+                        onClick={e => { e.stopPropagation(); toggleInstall(item.id, item.id); }}
                         className="shrink-0 px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                        style={{ backgroundColor: installed.has(item.id) ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)', color: installed.has(item.id) ? 'white' : '#1a1a2e' }}
+                        style={{ backgroundColor: installedItems.has(item.id) ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)', color: installedItems.has(item.id) ? 'white' : '#1a1a2e' }}
                       >
-                        {installed.has(item.id) ? '✓' : 'Get'}
+                        {installedItems.has(item.id) ? '✓' : 'Get'}
                       </button>
                     </motion.div>
                   );
@@ -630,15 +627,15 @@ export function CustomizationScreen({ theme, setTheme }: CustomizationScreenProp
                     </div>
                   </div>
                   <button
-                    onClick={e => { e.stopPropagation(); toggleInstall(cat.id); }}
+                    onClick={e => { e.stopPropagation(); toggleInstall(cat.id, cat.id); }}
                     className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
                     style={{
-                      borderColor: installed.has(cat.id) ? '#22c55e' : 'rgba(255,255,255,0.2)',
-                      color: installed.has(cat.id) ? '#22c55e' : undefined,
-                      backgroundColor: installed.has(cat.id) ? 'rgba(34,197,94,0.1)' : 'transparent',
+                      borderColor: installedItems.has(cat.id) ? '#22c55e' : 'rgba(255,255,255,0.2)',
+                      color: installedItems.has(cat.id) ? '#22c55e' : undefined,
+                      backgroundColor: installedItems.has(cat.id) ? 'rgba(34,197,94,0.1)' : 'transparent',
                     }}
                   >
-                    {installed.has(cat.id) ? '✓ Got' : 'Get'}
+                    {installedItems.has(cat.id) ? '✓ Got' : 'Get'}
                   </button>
                 </motion.button>
               ))}
