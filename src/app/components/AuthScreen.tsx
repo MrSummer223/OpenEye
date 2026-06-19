@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Eye, Mail, Lock, CircleAlert as AlertCircle, Loader as Loader2 } from 'lucide-react';
+import { Eye, Mail, Lock, CircleAlert as AlertCircle, Loader as Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
 interface AuthScreenProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
+  onBack?: () => void;
 }
 
-export function AuthScreen({ theme }: AuthScreenProps) {
+export function AuthScreen({ theme, onBack }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +38,17 @@ export function AuthScreen({ theme }: AuthScreenProps) {
       className="size-full flex flex-col items-center justify-center p-8"
       style={{ backgroundColor: theme.backgroundColor, color: theme.textColor }}
     >
+      {onBack && (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={onBack}
+          className="absolute top-4 left-4 p-3 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </motion.button>
+      )}
+
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

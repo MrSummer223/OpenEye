@@ -13,6 +13,10 @@ interface CustomizationScreenProps {
   setTheme: (theme: any) => void;
   installedItems: Set<string>;
   onToggleInstall: (itemId: string, itemType: string) => Promise<boolean | void>;
+  wallpaper?: string | null;
+  onApplyWallpaper?: (wallpaper: string) => void;
+  font?: string;
+  onApplyFont?: (font: string) => void;
 }
 
 type Screen = 'splash' | 'home' | 'category';
@@ -120,11 +124,13 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
 };
 
-export function CustomizationScreen({ theme, setTheme, installedItems, onToggleInstall }: CustomizationScreenProps) {
+export function CustomizationScreen({ theme, setTheme, installedItems, onToggleInstall, wallpaper, onApplyWallpaper, font, onApplyFont }: CustomizationScreenProps) {
   const [screen, setScreen] = useState<Screen>('splash');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'featured' | 'categories' | 'new'>('featured');
+  const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(wallpaper || null);
+  const [selectedFont, setSelectedFont] = useState<string>(font || 'system-ui');
 
   useEffect(() => {
     const t = setTimeout(() => setScreen('home'), 2200);
@@ -135,7 +141,12 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setUploadedPhoto(reader.result as string);
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setUploadedPhoto(dataUrl);
+        setSelectedWallpaper(dataUrl);
+        onApplyWallpaper?.(dataUrl);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -237,7 +248,7 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
         case 'wallpapers':
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-3">
-              <motion.label variants={itemVariants} className="flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 cursor-pointer">
+              <motion.label variants={itemVariants} className="flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
                 <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                 <Upload className="w-8 h-8 opacity-50" />
                 <div>
@@ -247,12 +258,27 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
               </motion.label>
               <div className="grid grid-cols-2 gap-3">
                 {WALLPAPERS.map(w => (
-                  <motion.div key={w.name} variants={itemVariants} className="rounded-2xl overflow-hidden border border-white/10 cursor-pointer group">
-                    <div className="h-28 transition-transform group-hover:scale-105" style={{ background: w.image }} />
+                  <motion.button
+                    key={w.name}
+                    variants={itemVariants}
+                    onClick={() => {
+                      setSelectedWallpaper(w.image);
+                      onApplyWallpaper?.(w.image);
+                    }}
+                    className="rounded-2xl overflow-hidden border-2 cursor-pointer group text-left transition-all"
+                    style={{ borderColor: selectedWallpaper === w.image ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                  >
+                    <div className="h-28 transition-transform group-hover:scale-105 relative" style={{ background: w.image }}>
+                      {selectedWallpaper === w.image && (
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
                     <div className="p-2 bg-white/5">
                       <p className="text-xs font-semibold">{w.name}</p>
                     </div>
-                  </motion.div>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
@@ -262,12 +288,24 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3">
               {DESIGNS.map(d => (
-                <motion.div key={d.name} variants={itemVariants} className="rounded-2xl overflow-hidden border border-white/10 cursor-pointer group">
-                  <div className={`h-24 bg-gradient-to-br ${d.gradient} transition-transform group-hover:scale-105`} />
+                <motion.button
+                  key={d.name}
+                  variants={itemVariants}
+                  onClick={() => toggleInstall(d.name, 'design')}
+                  className="rounded-2xl overflow-hidden border-2 cursor-pointer group text-left transition-all"
+                  style={{ borderColor: installedItems.has(d.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                >
+                  <div className={`h-24 bg-gradient-to-br ${d.gradient} transition-transform group-hover:scale-105 relative`}>
+                    {installedItems.has(d.name) && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
                   <div className="p-2 bg-white/5">
                     <p className="text-xs font-semibold">{d.name}</p>
                   </div>
-                </motion.div>
+                </motion.button>
               ))}
             </motion.div>
           );
@@ -276,12 +314,28 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-2">
               {FONTS.map(f => (
-                <motion.button key={f.name} variants={itemVariants} className="w-full p-4 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-between hover:bg-white/10 transition-colors">
+                <motion.button
+                  key={f.name}
+                  variants={itemVariants}
+                  onClick={() => {
+                    setSelectedFont(f.family);
+                    onApplyFont?.(f.family);
+                  }}
+                  className="w-full p-4 rounded-2xl border-2 bg-white/5 flex items-center justify-between hover:bg-white/10 transition-all text-left"
+                  style={{ borderColor: selectedFont === f.family ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                >
                   <div>
                     <p className="text-xs opacity-50 mb-1">{f.name}</p>
                     <p style={{ fontFamily: f.family }}>The quick brown fox</p>
                   </div>
-                  <span style={{ fontFamily: f.family }} className="text-3xl opacity-30">{f.preview}</span>
+                  <div className="flex items-center gap-2">
+                    {selectedFont === f.family && (
+                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <span style={{ fontFamily: f.family }} className="text-3xl opacity-30">{f.preview}</span>
+                  </div>
                 </motion.button>
               ))}
             </motion.div>
@@ -291,11 +345,22 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3">
               {WIDGETS.map(w => (
-                <motion.div key={w.name} variants={itemVariants} className="p-4 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+                <motion.button
+                  key={w.name}
+                  variants={itemVariants}
+                  onClick={() => toggleInstall(w.name, 'widget')}
+                  className="p-4 rounded-2xl border-2 bg-white/5 cursor-pointer hover:bg-white/10 transition-all text-left"
+                  style={{ borderColor: installedItems.has(w.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                >
                   <p className="text-3xl mb-2">{w.icon}</p>
                   <p className="font-semibold text-sm">{w.name}</p>
                   <p className="text-xs opacity-50">{w.type}</p>
-                </motion.div>
+                  {installedItems.has(w.name) && (
+                    <div className="mt-2">
+                      <span className="text-xs text-green-400 font-semibold">Installed</span>
+                    </div>
+                  )}
+                </motion.button>
               ))}
             </motion.div>
           );
@@ -304,13 +369,25 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3">
               {ICON_PACKS.map(p => (
-                <motion.div key={p.name} variants={itemVariants} className="p-4 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+                <motion.button
+                  key={p.name}
+                  variants={itemVariants}
+                  onClick={() => toggleInstall(p.name, 'icon')}
+                  className="p-4 rounded-2xl border-2 bg-white/5 cursor-pointer hover:bg-white/10 transition-all text-left"
+                  style={{ borderColor: installedItems.has(p.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                >
                   <div className="flex gap-2 mb-3">
                     {p.colors.map((c, i) => <div key={i} className="w-6 h-6 rounded-full" style={{ backgroundColor: c }} />)}
                   </div>
                   <p className="font-semibold text-sm">{p.name}</p>
                   <p className="text-xs opacity-50">{p.style}</p>
-                </motion.div>
+                  {installedItems.has(p.name) && (
+                    <div className="mt-2 flex items-center gap-1">
+                      <Check className="w-3 h-3 text-green-400" />
+                      <span className="text-xs text-green-400 font-semibold">Installed</span>
+                    </div>
+                  )}
+                </motion.button>
               ))}
             </motion.div>
           );
@@ -319,13 +396,26 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-2">
               {SOUNDS.map(s => (
-                <motion.button key={s.name} variants={itemVariants} className="w-full p-4 rounded-2xl border border-white/10 bg-white/5 flex items-center gap-4 hover:bg-white/10 transition-colors">
+                <motion.button
+                  key={s.name}
+                  variants={itemVariants}
+                  onClick={() => toggleInstall(s.name, 'sound')}
+                  className="w-full p-4 rounded-2xl border-2 bg-white/5 flex items-center gap-4 hover:bg-white/10 transition-all text-left"
+                  style={{ borderColor: installedItems.has(s.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                >
                   <span className="text-2xl">{s.icon}</span>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1">
                     <p className="font-semibold">{s.name}</p>
                     <p className="text-xs opacity-50">{s.theme}</p>
                   </div>
-                  <Play className="w-5 h-5 opacity-40" />
+                  {installedItems.has(s.name) ? (
+                    <div className="flex items-center gap-1">
+                      <Check className="w-4 h-4 text-green-400" />
+                      <span className="text-xs text-green-400 font-semibold">Active</span>
+                    </div>
+                  ) : (
+                    <Play className="w-5 h-5 opacity-40" />
+                  )}
                 </motion.button>
               ))}
             </motion.div>
@@ -337,19 +427,22 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
               {EFFECTS.map(e => {
                 const Icon = e.icon;
                 return (
-                  <motion.div key={e.name} variants={itemVariants} className="p-4 rounded-2xl border border-white/10 bg-white/5 flex items-center gap-4">
+                  <motion.button
+                    key={e.name}
+                    variants={itemVariants}
+                    onClick={() => toggleInstall(e.name, 'effect')}
+                    className="w-full p-4 rounded-2xl border-2 bg-white/5 flex items-center gap-4 hover:bg-white/10 transition-all text-left"
+                    style={{ borderColor: installedItems.has(e.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+                  >
                     <Icon className="w-5 h-5 opacity-60 shrink-0" />
                     <div className="flex-1">
                       <p className="font-semibold">{e.name}</p>
                       <p className="text-xs opacity-50">{e.description}</p>
                     </div>
-                    <label className="relative inline-block w-11 h-6 shrink-0">
-                      <input type="checkbox" className="opacity-0 w-0 h-0 peer" defaultChecked />
-                      <span className="absolute inset-0 bg-white/20 rounded-full cursor-pointer peer-checked:bg-indigo-500 transition-all">
-                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-                      </span>
-                    </label>
-                  </motion.div>
+                    <div className={`relative inline-block w-11 h-6 shrink-0 rounded-full transition-all ${installedItems.has(e.name) ? 'bg-green-500' : 'bg-white/20'}`}>
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${installedItems.has(e.name) ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </div>
+                  </motion.button>
                 );
               })}
             </motion.div>

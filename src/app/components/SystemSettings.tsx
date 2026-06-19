@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X, LogOut } from 'lucide-react';
+import { ArrowLeft, Wifi, Bell, Lock, Globe, Clock, Database, Accessibility, RefreshCw, Settings2, ChevronRight, X, LogOut, User, Cloud } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
 interface SystemSettingsProps {
@@ -10,6 +10,7 @@ interface SystemSettingsProps {
   setBrightness: (v: number) => void;
   darkMode: boolean;
   setDarkMode: (v: boolean) => void;
+  onOpenAuth?: () => void;
 }
 
 const SETTINGS = [
@@ -34,8 +35,8 @@ const DEVICE_INFO = [
   { label: 'Battery Health', value: 'Excellent', green: true },
 ];
 
-export function SystemSettings({ theme, brightness, setBrightness, darkMode, setDarkMode }: SystemSettingsProps) {
-  const { signOut } = useAuth();
+export function SystemSettings({ theme, brightness, setBrightness, darkMode, setDarkMode, onOpenAuth }: SystemSettingsProps) {
+  const { user, signOut } = useAuth();
   const [openPanel, setOpenPanel] = useState<string | null>(null);
   const [notifications, setNotifications] = useState(true);
   const [devMode, setDevMode] = useState(false);
@@ -67,16 +68,59 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
           <h2 className="text-xl font-semibold">System Settings</h2>
           <p className="text-xs opacity-70">Device Configuration</p>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={signOut}
-          className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
-        >
-          <LogOut className="w-5 h-5" />
-        </motion.button>
+        {user && (
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={signOut}
+            className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
+          >
+            <LogOut className="w-5 h-5" />
+          </motion.button>
+        )}
       </motion.div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Account Section */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h4 className="text-lg font-semibold mb-3">Account</h4>
+          {user ? (
+            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
+                  {user.email?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">{user.email}</p>
+                  <p className="text-xs opacity-50 flex items-center gap-1">
+                    <Cloud className="w-3 h-3" /> Synced to cloud
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={onOpenAuth}
+              className="w-full p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/80 to-cyan-500/80 flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold">Sign in to sync</p>
+                  <p className="text-xs opacity-50">Save your scans & customizations across devices</p>
+                </div>
+                <ChevronRight className="w-5 h-5 opacity-30" />
+              </div>
+            </motion.button>
+          )}
+        </motion.div>
+
         {/* Settings List */}
         <div className="space-y-2">
           {SETTINGS.map((s, i) => {
@@ -87,7 +131,7 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
                 key={s.name}
                 initial={{ x: -24, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.08 + i * 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ delay: 0.12 + i * 0.05, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
               >
                 <motion.button
                   whileTap={{ scale: 0.97 }}
