@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Home } from './components/Home';
 import { ScanMode } from './components/ScanMode';
 import { TranslationMode } from './components/TranslationMode';
@@ -7,9 +7,6 @@ import { ReadingMode } from './components/ReadingMode';
 import { CustomizationScreen } from './components/CustomizationScreen';
 import { SystemSettings } from './components/SystemSettings';
 import { AuthScreen } from './components/AuthScreen';
-import { LockScreen } from './components/LockScreen';
-import { StatusBar } from './components/StatusBar';
-import { ControlCenter } from './components/ControlCenter';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { Loader as Loader2 } from 'lucide-react';
@@ -35,10 +32,10 @@ export interface AppCustomization {
 
 const DEFAULT_CUSTOMIZATION: AppCustomization = {
   theme: {
-    backgroundColor: '#1a1a2e',
-    primaryColor: '#0f3460',
-    accentColor: '#16213e',
-    textColor: '#eaeaea',
+    backgroundColor: '#0a0e14',
+    primaryColor: '#0ea5e9',
+    accentColor: '#14b8a6',
+    textColor: '#e6edf3',
   },
   wallpaper: null,
   font: 'system-ui',
@@ -83,18 +80,14 @@ function saveLocalScans(scans: Scan[]) {
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [isLocked, setIsLocked] = useState(true);
-  const [showControlCenter, setShowControlCenter] = useState(false);
   const [flashlightOn, setFlashlightOn] = useState(false);
-  const [brightness, setBrightness] = useState(75);
+  const [brightness, setBrightness] = useState(85);
   const [darkMode, setDarkMode] = useState(true);
   const [customization, setCustomization] = useState<AppCustomization>(loadLocalCustomization);
   const [savedScans, setSavedScans] = useState<Scan[]>(loadLocalScans);
   const [dataLoading, setDataLoading] = useState(true);
 
-  const activeTheme = darkMode
-    ? customization.theme
-    : { backgroundColor: '#f0f4f8', primaryColor: '#e2e8f0', accentColor: '#cbd5e1', textColor: '#1a1a2e' };
+  const activeTheme = customization.theme;
 
   useEffect(() => {
     setDataLoading(false);
@@ -238,30 +231,19 @@ function AppContent() {
     return !isInstalled;
   };
 
-  // Handle swipe down from top to show control center
-  const handleDrag = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    const element = e.target as HTMLElement;
-    const rect = element.getBoundingClientRect();
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    if (clientY - rect.top < 30 && !isLocked && !showControlCenter) {
-      setShowControlCenter(true);
-    }
-  }, [isLocked, showControlCenter]);
-
   if (authLoading || dataLoading) {
     return (
-      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#0a0a0a' }}>
-        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#05070a' }}>
+        <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
       </div>
     );
   }
 
   if (showAuth) {
     return (
-      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#05070a' }}>
         <div
-          className="relative w-[380px] h-[780px] rounded-[40px] shadow-2xl overflow-hidden border-8 border-gray-800"
+          className="relative w-[420px] h-[680px] rounded-[32px] shadow-2xl overflow-hidden border border-white/10"
           style={{ backgroundColor: activeTheme.backgroundColor }}
         >
           <AuthScreen theme={activeTheme} onBack={() => setShowAuth(false)} />
@@ -272,9 +254,9 @@ function AppContent() {
 
   return (
     <BrowserRouter>
-      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="size-full flex items-center justify-center" style={{ backgroundColor: '#05070a' }}>
         <div
-          className="relative w-[380px] h-[780px] rounded-[40px] shadow-2xl overflow-hidden border-8 border-gray-800 transition-colors duration-500"
+          className="relative w-[420px] h-[680px] rounded-[32px] shadow-2xl overflow-hidden border border-white/10 transition-colors duration-500"
           style={{
             backgroundColor: activeTheme.backgroundColor,
             backgroundImage: customization.wallpaper || undefined,
@@ -283,103 +265,69 @@ function AppContent() {
             fontFamily: customization.font,
             filter: `brightness(${0.4 + (brightness / 100) * 0.65})`,
           }}
-          onMouseMove={handleDrag}
-          onTouchStart={handleDrag}
         >
           {flashlightOn && (
             <div className="absolute inset-0 bg-white/20 pointer-events-none z-[60]" />
           )}
 
-          {/* Lock Screen */}
-          {isLocked && (
-            <LockScreen
-              theme={activeTheme}
-              onUnlock={() => setIsLocked(false)}
-            />
-          )}
-
-          {/* Main OS Interface */}
-          {!isLocked && (
-            <>
-              {/* Status Bar */}
-              <StatusBar textColor={activeTheme.textColor} brightness={brightness} />
-
-              {/* Control Center */}
-              <ControlCenter
-                visible={showControlCenter}
-                onClose={() => setShowControlCenter(false)}
-                theme={activeTheme}
-                darkMode={darkMode}
-                setDarkMode={setDarkMode}
-                brightness={brightness}
-                setBrightness={setBrightness}
-                flashlightOn={flashlightOn}
-                setFlashlightOn={setFlashlightOn}
-              />
-
-              {/* App Content */}
-              <div className="size-full flex flex-col">
-                <Routes>
-                  <Route path="/" element={
-                    <Home
-                      theme={activeTheme}
-                      flashlightOn={flashlightOn}
-                      setFlashlightOn={setFlashlightOn}
-                      savedScans={savedScans}
-                      onOpenControlCenter={() => setShowControlCenter(true)}
-                    />
-                  } />
-                  <Route path="/scan" element={
-                    <ScanMode
-                      theme={activeTheme}
-                      flashlightOn={flashlightOn}
-                      setFlashlightOn={setFlashlightOn}
-                      savedScans={savedScans}
-                      onSaveScan={handleSaveScan}
-                      onDeleteScan={handleDeleteScan}
-                    />
-                  } />
-                  <Route path="/translate" element={
-                    <TranslationMode
-                      theme={activeTheme}
-                      flashlightOn={flashlightOn}
-                      setFlashlightOn={setFlashlightOn}
-                    />
-                  } />
-                  <Route path="/read" element={
-                    <ReadingMode
-                      theme={activeTheme}
-                      flashlightOn={flashlightOn}
-                      setFlashlightOn={setFlashlightOn}
-                    />
-                  } />
-                  <Route path="/customize" element={
-                    <CustomizationScreen
-                      theme={activeTheme}
-                      setTheme={handleApplyTheme}
-                      installedItems={customization.installedItems}
-                      onToggleInstall={handleToggleInstall}
-                      wallpaper={customization.wallpaper}
-                      onApplyWallpaper={handleApplyWallpaper}
-                      font={customization.font}
-                      onApplyFont={handleApplyFont}
-                    />
-                  } />
-                  <Route path="/settings" element={
-                    <SystemSettings
-                      theme={activeTheme}
-                      brightness={brightness}
-                      setBrightness={setBrightness}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                      onOpenAuth={() => setShowAuth(true)}
-                      onLock={() => setIsLocked(true)}
-                    />
-                  } />
-                </Routes>
-              </div>
-            </>
-          )}
+          <div className="size-full flex flex-col">
+            <Routes>
+              <Route path="/" element={
+                <Home
+                  theme={activeTheme}
+                  flashlightOn={flashlightOn}
+                  setFlashlightOn={setFlashlightOn}
+                  savedScans={savedScans}
+                />
+              } />
+              <Route path="/scan" element={
+                <ScanMode
+                  theme={activeTheme}
+                  flashlightOn={flashlightOn}
+                  setFlashlightOn={setFlashlightOn}
+                  savedScans={savedScans}
+                  onSaveScan={handleSaveScan}
+                  onDeleteScan={handleDeleteScan}
+                />
+              } />
+              <Route path="/translate" element={
+                <TranslationMode
+                  theme={activeTheme}
+                  flashlightOn={flashlightOn}
+                  setFlashlightOn={setFlashlightOn}
+                />
+              } />
+              <Route path="/read" element={
+                <ReadingMode
+                  theme={activeTheme}
+                  flashlightOn={flashlightOn}
+                  setFlashlightOn={setFlashlightOn}
+                />
+              } />
+              <Route path="/customize" element={
+                <CustomizationScreen
+                  theme={activeTheme}
+                  setTheme={handleApplyTheme}
+                  installedItems={customization.installedItems}
+                  onToggleInstall={handleToggleInstall}
+                  wallpaper={customization.wallpaper}
+                  onApplyWallpaper={handleApplyWallpaper}
+                  font={customization.font}
+                  onApplyFont={handleApplyFont}
+                />
+              } />
+              <Route path="/settings" element={
+                <SystemSettings
+                  theme={activeTheme}
+                  brightness={brightness}
+                  setBrightness={setBrightness}
+                  darkMode={darkMode}
+                  setDarkMode={setDarkMode}
+                  onOpenAuth={() => setShowAuth(true)}
+                />
+              } />
+            </Routes>
+          </div>
         </div>
       </div>
     </BrowserRouter>
