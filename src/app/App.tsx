@@ -6,6 +6,7 @@ import { TranslationMode } from './components/TranslationMode';
 import { ReadingMode } from './components/ReadingMode';
 import { CustomizationScreen } from './components/CustomizationScreen';
 import { SystemSettings } from './components/SystemSettings';
+import { HeatVisionMode } from './components/HeatVisionMode';
 import { AuthScreen } from './components/AuthScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -303,6 +304,9 @@ function AppContent() {
                   flashlightOn={flashlightOn}
                   setFlashlightOn={setFlashlightOn}
                 />
+              } />
+              <Route path="/heat" element={
+                <HeatVisionMode theme={activeTheme} />
               } />
               <Route path="/customize" element={
                 <CustomizationScreen
