@@ -7,6 +7,8 @@ export function useCamera() {
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
 
   const startCamera = useCallback(async () => {
     if (streamRef.current) return;
@@ -21,6 +23,11 @@ export function useCamera() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+
+      const track = stream.getVideoTracks()[0];
+      const caps = track.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
+      setTorchSupported(!!caps?.torch);
+
       setStatus('active');
     } catch (e: any) {
       setStatus('error');
@@ -33,7 +40,26 @@ export function useCamera() {
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setStatus('idle');
+    setTorchSupported(false);
+    setTorchOn(false);
   }, []);
+
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return false;
+
+    const caps = track.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
+    if (!caps?.torch) return false;
+
+    try {
+      const next = !torchOn;
+      await track.applyConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] });
+      setTorchOn(next);
+      return next;
+    } catch {
+      return false;
+    }
+  }, [torchOn]);
 
   const captureFrame = useCallback((): HTMLCanvasElement | null => {
     const video = videoRef.current;
@@ -47,5 +73,5 @@ export function useCamera() {
 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
-  return { videoRef, status, error, startCamera, stopCamera, captureFrame };
+  return { videoRef, status, error, startCamera, stopCamera, captureFrame, torchSupported, torchOn, toggleTorch };
 }

@@ -8,8 +8,6 @@ import { translateText } from '../../utils/translate';
 
 interface TranslationModeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
-  flashlightOn: boolean;
-  setFlashlightOn: (v: boolean) => void;
 }
 
 const LANGUAGES = [
@@ -27,7 +25,7 @@ type InputMode = 'camera' | 'text';
 
 interface RecentItem { from: string; to: string; text: string; time: string }
 
-export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: TranslationModeProps) {
+export function TranslationMode({ theme }: TranslationModeProps) {
   const [inputMode, setInputMode] = useState<InputMode>('camera');
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('es');
@@ -42,7 +40,7 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
     { from: '🇫🇷', to: '🇬🇧', text: 'Bonjour mon ami', time: '15 min ago' },
   ]);
 
-  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
+  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame, torchSupported, torchOn, toggleTorch } = useCamera();
   const { status: ocrStatus, progress, recognize } = useOCR();
 
   useEffect(() => {
@@ -147,8 +145,12 @@ export function TranslationMode({ theme, flashlightOn, setFlashlightOn }: Transl
         </div>
         <motion.button
           whileTap={{ scale: 0.88 }}
-          onClick={() => setFlashlightOn(!flashlightOn)}
-          className={`p-2 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+          onClick={() => toggleTorch()}
+          disabled={!torchSupported}
+          className={`p-2 rounded-full transition-colors shadow-lg ${
+            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+            : torchOn ? 'bg-yellow-400 text-gray-900'
+            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>

@@ -7,13 +7,11 @@ import { useOCR } from '../../hooks/useOCR';
 
 interface ReadingModeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
-  flashlightOn: boolean;
-  setFlashlightOn: (v: boolean) => void;
 }
 
 interface HistoryItem { title: string; time: string; text: string }
 
-export function ReadingMode({ theme, flashlightOn, setFlashlightOn }: ReadingModeProps) {
+export function ReadingMode({ theme }: ReadingModeProps) {
   const [view, setView] = useState<'scan' | 'display'>('scan');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -26,7 +24,7 @@ export function ReadingMode({ theme, flashlightOn, setFlashlightOn }: ReadingMod
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
+  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame, torchSupported, torchOn, toggleTorch } = useCamera();
   const { status: ocrStatus, progress, error: ocrError, recognize } = useOCR();
 
   const isOcrRunning = ocrStatus === 'running';
@@ -124,8 +122,12 @@ export function ReadingMode({ theme, flashlightOn, setFlashlightOn }: ReadingMod
         </div>
         <motion.button
           whileTap={{ scale: 0.88 }}
-          onClick={() => setFlashlightOn(!flashlightOn)}
-          className={`p-2 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+          onClick={() => toggleTorch()}
+          disabled={!torchSupported}
+          className={`p-2 rounded-full transition-colors shadow-lg ${
+            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+            : torchOn ? 'bg-yellow-400 text-gray-900'
+            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>

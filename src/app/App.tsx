@@ -6,7 +6,6 @@ import { TranslationMode } from './components/TranslationMode';
 import { ReadingMode } from './components/ReadingMode';
 import { CustomizationScreen } from './components/CustomizationScreen';
 import { SystemSettings } from './components/SystemSettings';
-import { HeatVisionMode } from './components/HeatVisionMode';
 import { AuthScreen } from './components/AuthScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -81,7 +80,6 @@ function saveLocalScans(scans: Scan[]) {
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [flashlightOn, setFlashlightOn] = useState(false);
   const [brightness, setBrightness] = useState(85);
   const [darkMode, setDarkMode] = useState(true);
   const [customization, setCustomization] = useState<AppCustomization>(loadLocalCustomization);
@@ -267,25 +265,17 @@ function AppContent() {
             filter: `brightness(${0.4 + (brightness / 100) * 0.65})`,
           }}
         >
-          {flashlightOn && (
-            <div className="absolute inset-0 bg-white/20 pointer-events-none z-[60]" />
-          )}
-
           <div className="size-full flex flex-col">
             <Routes>
               <Route path="/" element={
                 <Home
                   theme={activeTheme}
-                  flashlightOn={flashlightOn}
-                  setFlashlightOn={setFlashlightOn}
                   savedScans={savedScans}
                 />
               } />
               <Route path="/scan" element={
                 <ScanMode
                   theme={activeTheme}
-                  flashlightOn={flashlightOn}
-                  setFlashlightOn={setFlashlightOn}
                   savedScans={savedScans}
                   onSaveScan={handleSaveScan}
                   onDeleteScan={handleDeleteScan}
@@ -294,19 +284,12 @@ function AppContent() {
               <Route path="/translate" element={
                 <TranslationMode
                   theme={activeTheme}
-                  flashlightOn={flashlightOn}
-                  setFlashlightOn={setFlashlightOn}
                 />
               } />
               <Route path="/read" element={
                 <ReadingMode
                   theme={activeTheme}
-                  flashlightOn={flashlightOn}
-                  setFlashlightOn={setFlashlightOn}
                 />
-              } />
-              <Route path="/heat" element={
-                <HeatVisionMode theme={activeTheme} />
               } />
               <Route path="/customize" element={
                 <CustomizationScreen

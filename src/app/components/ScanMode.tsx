@@ -8,8 +8,6 @@ import { useOCR } from '../../hooks/useOCR';
 
 interface ScanModeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
-  flashlightOn: boolean;
-  setFlashlightOn: (v: boolean) => void;
   savedScans: Scan[];
   onSaveScan: (text: string) => Promise<boolean | void>;
   onDeleteScan: (id: string) => Promise<void>;
@@ -17,10 +15,10 @@ interface ScanModeProps {
 
 const slideUp = { initial: { y: 20, opacity: 0 }, animate: { y: 0, opacity: 1 } };
 
-export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, onSaveScan, onDeleteScan }: ScanModeProps) {
+export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanModeProps) {
   const [scannedText, setScannedText] = useState('');
   const [toast, setToast] = useState<string | null>(null);
-  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame } = useCamera();
+  const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame, torchSupported, torchOn, toggleTorch } = useCamera();
   const { status: ocrStatus, progress, error: ocrError, recognize } = useOCR();
 
   const isScanning = ocrStatus === 'running';
@@ -126,8 +124,12 @@ export function ScanMode({ theme, flashlightOn, setFlashlightOn, savedScans, onS
         </div>
         <motion.button
           whileTap={{ scale: 0.88 }}
-          onClick={() => setFlashlightOn(!flashlightOn)}
-          className={`p-2 rounded-full transition-colors shadow-lg ${flashlightOn ? 'bg-yellow-400 text-gray-900' : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+          onClick={() => toggleTorch()}
+          disabled={!torchSupported}
+          className={`p-2 rounded-full transition-colors shadow-lg ${
+            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+            : torchOn ? 'bg-yellow-400 text-gray-900'
+            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>

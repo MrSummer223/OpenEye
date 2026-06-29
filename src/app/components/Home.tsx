@@ -1,13 +1,11 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { ScanLine, Languages, BookOpen, Settings, Store, Eye, Flame } from 'lucide-react';
+import { ScanLine, Languages, BookOpen, Settings, Store, Eye } from 'lucide-react';
 import type { Scan } from '../App';
 
 interface HomeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
-  flashlightOn: boolean;
-  setFlashlightOn: (v: boolean) => void;
   savedScans: Scan[];
 }
 
@@ -15,7 +13,6 @@ const primaryModes = [
   { name: 'Scan', icon: ScanLine, path: '/scan', gradient: 'from-sky-500 to-cyan-400', desc: 'Capture & read text' },
   { name: 'Read', icon: BookOpen, path: '/read', gradient: 'from-emerald-500 to-teal-400', desc: 'Listen to any text' },
   { name: 'Translate', icon: Languages, path: '/translate', gradient: 'from-amber-500 to-orange-400', desc: 'Live translation' },
-  { name: 'Heat Vision', icon: Flame, path: '/heat', gradient: 'from-orange-500 to-red-500', desc: 'Thermal signatures' },
 ];
 
 const utilities = [
