@@ -17,6 +17,8 @@ interface CustomizationScreenProps {
   onApplyWallpaper?: (wallpaper: string) => void;
   font?: string;
   onApplyFont?: (font: string) => void;
+  iconPack?: string;
+  onApplyIconPack?: (pack: string) => void;
 }
 
 type Screen = 'splash' | 'home' | 'category';
@@ -124,7 +126,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
 };
 
-export function CustomizationScreen({ theme, setTheme, installedItems, onToggleInstall, wallpaper, onApplyWallpaper, font, onApplyFont }: CustomizationScreenProps) {
+export function CustomizationScreen({ theme, setTheme, installedItems, onToggleInstall, wallpaper, onApplyWallpaper, font, onApplyFont, iconPack, onApplyIconPack }: CustomizationScreenProps) {
   const [screen, setScreen] = useState<Screen>('splash');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
@@ -223,20 +225,31 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
                   key={p.name}
                   variants={itemVariants}
                   onClick={() => setTheme(p.colors)}
-                  className="relative p-3 rounded-2xl border transition-all"
+                  className="relative p-3 rounded-2xl border transition-all overflow-hidden"
                   style={{
                     backgroundColor: p.colors.backgroundColor,
-                    borderColor: theme.backgroundColor === p.colors.backgroundColor ? '#22c55e' : 'rgba(255,255,255,0.08)',
+                    borderColor: theme.backgroundColor === p.colors.backgroundColor ? p.colors.primaryColor : 'rgba(255,255,255,0.08)',
                   }}
                 >
-                  <div className="flex gap-1.5 mb-2">
-                    {[p.colors.primaryColor, p.colors.accentColor, p.colors.textColor].map((c, i) => (
-                      <div key={i} className="w-5 h-5 rounded-full" style={{ backgroundColor: c }} />
+                  {/* Mini icon mockup using theme colors */}
+                  <div className="flex gap-2 mb-2.5">
+                    {[p.colors.primaryColor, p.colors.accentColor].map((c, i) => (
+                      <div
+                        key={i}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center"
+                        style={{
+                          background: `linear-gradient(135deg, ${p.colors.primaryColor}, ${p.colors.accentColor})`,
+                          boxShadow: `0 2px 8px ${p.colors.primaryColor}50, inset 0 1px 0 rgba(255,255,255,0.25)`,
+                        }}
+                      >
+                        <div className="w-3.5 h-3.5 rounded-sm bg-white/90" />
+                      </div>
                     ))}
                   </div>
                   <p className="text-left text-sm font-semibold" style={{ color: p.colors.textColor }}>{p.name}</p>
+                  <p className="text-left text-[10px] opacity-50" style={{ color: p.colors.textColor }}>Tap to apply</p>
                   {theme.backgroundColor === p.colors.backgroundColor && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: p.colors.primaryColor }}>
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -368,27 +381,56 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
         case 'icons':
           return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3">
-              {ICON_PACKS.map(p => (
-                <motion.button
-                  key={p.name}
-                  variants={itemVariants}
-                  onClick={() => toggleInstall(p.name, 'icon')}
-                  className="p-4 rounded-2xl border-2 bg-white/5 cursor-pointer hover:bg-white/10 transition-all text-left"
-                  style={{ borderColor: installedItems.has(p.name) ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
-                >
-                  <div className="flex gap-2 mb-3">
-                    {p.colors.map((c, i) => <div key={i} className="w-6 h-6 rounded-full" style={{ backgroundColor: c }} />)}
-                  </div>
-                  <p className="font-semibold text-sm">{p.name}</p>
-                  <p className="text-xs opacity-50">{p.style}</p>
-                  {installedItems.has(p.name) && (
-                    <div className="mt-2 flex items-center gap-1">
-                      <Check className="w-3 h-3 text-green-400" />
-                      <span className="text-xs text-green-400 font-semibold">Installed</span>
+              {ICON_PACKS.map(p => {
+                const isActive = iconPack === p.name;
+                const isInstalled = installedItems.has(p.name);
+                return (
+                  <motion.button
+                    key={p.name}
+                    variants={itemVariants}
+                    onClick={() => onApplyIconPack?.(p.name)}
+                    className="p-4 rounded-2xl border-2 bg-white/5 cursor-pointer hover:bg-white/10 transition-all text-left"
+                    style={{ borderColor: isActive ? theme.primaryColor : 'rgba(255,255,255,0.1)' }}
+                  >
+                    {/* Live icon preview using theme colors */}
+                    <div className="flex items-center justify-center gap-2 mb-3 h-12">
+                      {p.colors.map((c, i) => {
+                        const useTheme = i === 0;
+                        const bg = useTheme
+                          ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`
+                          : p.style === 'Minimal'
+                          ? `${c}20`
+                          : `linear-gradient(135deg, ${c}, ${c}cc)`;
+                        return (
+                          <div
+                            key={i}
+                            className={`w-9 h-9 ${p.style === 'Sharp' ? 'rounded-md' : p.style === 'Rounded' ? 'rounded-2xl' : 'rounded-xl'} flex items-center justify-center`}
+                            style={{
+                              background: bg,
+                              boxShadow: p.style === 'Minimal' ? `inset 0 0 0 1px ${theme.primaryColor}40` : `0 2px 8px ${useTheme ? theme.primaryColor : c}40`,
+                            }}
+                          >
+                            <div className="w-4 h-4 rounded-sm bg-white/90" />
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </motion.button>
-              ))}
+                    <p className="font-semibold text-sm">{p.name}</p>
+                    <p className="text-xs opacity-50">{p.style}</p>
+                    {isActive ? (
+                      <div className="mt-2 flex items-center gap-1">
+                        <Check className="w-3 h-3" style={{ color: theme.primaryColor }} />
+                        <span className="text-xs font-semibold" style={{ color: theme.primaryColor }}>Active</span>
+                      </div>
+                    ) : isInstalled ? (
+                      <div className="mt-2 flex items-center gap-1">
+                        <Check className="w-3 h-3 text-green-400" />
+                        <span className="text-xs text-green-400 font-semibold">Installed</span>
+                      </div>
+                    ) : null}
+                  </motion.button>
+                );
+              })}
             </motion.div>
           );
 

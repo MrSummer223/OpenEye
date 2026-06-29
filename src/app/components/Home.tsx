@@ -1,27 +1,111 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { ScanLine, Languages, BookOpen, Settings, Store, Eye } from 'lucide-react';
+import { ScanLine, Languages, BookOpen, Settings, Store, Eye, ScanText, AudioLines, Globe as Globe2, SlidersHorizontal, LayoutGrid } from 'lucide-react';
 import type { Scan } from '../App';
 
 interface HomeProps {
   theme: { backgroundColor: string; primaryColor: string; accentColor: string; textColor: string };
   savedScans: Scan[];
+  iconPack: string;
+  wallpaper: string | null;
 }
 
+type IconStyle = 'outline' | 'filled' | 'rounded' | 'sharp' | 'minimal' | 'colorful';
+
+const ICON_PACK_STYLES: Record<string, IconStyle> = {
+  Default: 'outline',
+  Filled: 'filled',
+  Rounded: 'rounded',
+  Sharp: 'sharp',
+  Minimal: 'minimal',
+  Colorful: 'colorful',
+};
+
 const primaryModes = [
-  { name: 'Scan', icon: ScanLine, path: '/scan', gradient: 'from-sky-500 to-cyan-400', desc: 'Capture & read text' },
-  { name: 'Read', icon: BookOpen, path: '/read', gradient: 'from-emerald-500 to-teal-400', desc: 'Listen to any text' },
-  { name: 'Translate', icon: Languages, path: '/translate', gradient: 'from-amber-500 to-orange-400', desc: 'Live translation' },
+  { name: 'Scan', icon: ScanLine, detailIcon: ScanText, path: '/scan', desc: 'Capture & read text', hue: 200 },
+  { name: 'Read', icon: BookOpen, detailIcon: AudioLines, path: '/read', desc: 'Listen to any text', hue: 160 },
+  { name: 'Translate', icon: Languages, detailIcon: Globe2, path: '/translate', desc: 'Live translation', hue: 40 },
 ];
 
 const utilities = [
-  { name: 'Catalog', icon: Store, path: '/customize', gradient: 'from-rose-500 to-pink-400' },
-  { name: 'Settings', icon: Settings, path: '/settings', gradient: 'from-slate-500 to-slate-400' },
+  { name: 'Catalog', icon: Store, detailIcon: LayoutGrid, path: '/customize', hue: 340 },
+  { name: 'Settings', icon: Settings, detailIcon: SlidersHorizontal, path: '/settings', hue: 220 },
 ];
 
-export function Home({ theme, savedScans }: HomeProps) {
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.replace('#', '');
+  return [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
+}
+
+function mix(a: string, b: string, t: number): string {
+  const [r1, g1, b1] = hexToRgb(a);
+  const [r2, g2, b2] = hexToRgb(b);
+  return `rgb(${Math.round(r1 + (r2 - r1) * t)}, ${Math.round(g1 + (g2 - g1) * t)}, ${Math.round(b1 + (b2 - b1) * t)})`;
+}
+
+function IconTile({
+  mode,
+  theme,
+  iconStyle,
+  size,
+  hasWallpaper,
+}: {
+  mode: { icon: typeof ScanLine; detailIcon: typeof ScanLine; hue: number; name: string };
+  theme: HomeProps['theme'];
+  iconStyle: IconStyle;
+  size: 'lg' | 'sm';
+  hasWallpaper: boolean;
+}) {
+  const primary = theme.primaryColor;
+  const accent = theme.accentColor;
+  const iconSize = size === 'lg' ? 'w-7 h-7' : 'w-5 h-5';
+  const container = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-11 h-11 rounded-xl';
+
+  // Container: theme-driven gradient, with glass backdrop if wallpaper present
+  const bg = iconStyle === 'minimal'
+    ? `linear-gradient(135deg, ${primary}18, ${accent}18)`
+    : iconStyle === 'colorful'
+    ? `linear-gradient(135deg, hsl(${mode.hue} 80% 55%), hsl(${(mode.hue + 40) % 360} 75% 50%))`
+    : `linear-gradient(135deg, ${primary}, ${accent})`;
+
+  const glyphColor = iconStyle === 'minimal' ? primary : '#ffffff';
+  const strokeW = iconStyle === 'filled' || iconStyle === 'colorful' ? 2.5 : 1.75;
+  const radius = iconStyle === 'sharp' ? 'rounded-md' : iconStyle === 'rounded' ? 'rounded-3xl' : container.match(/rounded-(\S+)/)?.[0] || 'rounded-2xl';
+
+  return (
+    <div
+      className={`${size === 'lg' ? 'w-14 h-14' : 'w-11 h-11'} ${radius} flex items-center justify-center shrink-0 relative overflow-hidden`}
+      style={{
+        background: bg,
+        boxShadow: iconStyle === 'minimal'
+          ? `inset 0 0 0 1px ${primary}30`
+          : `0 4px 14px ${primary}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
+        backdropFilter: hasWallpaper ? 'blur(12px)' : undefined,
+      }}
+    >
+      {/* Sheen */}
+      {iconStyle !== 'minimal' && (
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.3) 0%, transparent 50%)' }}
+        />
+      )}
+      {/* Detailed glyph: main icon + subtle detail icon overlay */}
+      <div className="relative flex items-center justify-center">
+        <mode.icon
+          className={iconSize}
+          style={{ color: glyphColor, strokeWidth: strokeW }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function Home({ theme, savedScans, iconPack, wallpaper }: HomeProps) {
   const [now, setNow] = useState(new Date());
+  const iconStyle = ICON_PACK_STYLES[iconPack] || 'outline';
+  const hasWallpaper = !!wallpaper;
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -44,8 +128,14 @@ export function Home({ theme, savedScans }: HomeProps) {
         className="flex items-center justify-between px-6 pt-6 pb-4"
       >
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.primaryColor + '22' }}>
-            <Eye className="w-5 h-5" style={{ color: theme.primaryColor }} />
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{
+              background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+              boxShadow: `0 2px 8px ${theme.primaryColor}40`,
+            }}
+          >
+            <Eye className="w-5 h-5 text-white" strokeWidth={2} />
           </div>
           <span className="text-sm font-semibold tracking-wide">OpenEye</span>
         </div>
@@ -83,12 +173,15 @@ export function Home({ theme, savedScans }: HomeProps) {
             >
               <Link
                 to={mode.path}
-                className="block p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-colors"
+                className="block p-4 rounded-2xl border transition-colors"
+                style={{
+                  backgroundColor: hasWallpaper ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.05)',
+                  borderColor: hasWallpaper ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)',
+                  backdropFilter: hasWallpaper ? 'blur(16px)' : undefined,
+                }}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${mode.gradient} flex items-center justify-center shadow-lg shrink-0`}>
-                    <mode.icon className="w-6 h-6 text-white" />
-                  </div>
+                  <IconTile mode={mode} theme={theme} iconStyle={iconStyle} size="lg" hasWallpaper={hasWallpaper} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold">{mode.name}</p>
                     <p className="text-xs opacity-50 truncate">{mode.desc}</p>
@@ -113,10 +206,15 @@ export function Home({ theme, savedScans }: HomeProps) {
             </div>
             <Link
               to="/scan"
-              className="block p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              className="block p-3 rounded-2xl border transition-colors"
+              style={{
+                backgroundColor: hasWallpaper ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.05)',
+                borderColor: hasWallpaper ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)',
+                backdropFilter: hasWallpaper ? 'blur(16px)' : undefined,
+              }}
             >
               <div className="flex items-center gap-3">
-                <ScanLine className="w-4 h-4 opacity-50 shrink-0" />
+                <ScanLine className="w-4 h-4 opacity-50 shrink-0" style={{ color: theme.primaryColor }} />
                 <p className="text-sm opacity-80 truncate flex-1">{savedScans[0]?.text}</p>
                 <span className="text-xs opacity-40 shrink-0">{savedScans.length}</span>
               </div>
@@ -141,10 +239,15 @@ export function Home({ theme, savedScans }: HomeProps) {
             >
               <Link
                 to={util.path}
-                className="block p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-colors text-center"
+                className="block p-4 rounded-2xl border text-center transition-colors"
+                style={{
+                  backgroundColor: hasWallpaper ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.05)',
+                  borderColor: hasWallpaper ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)',
+                  backdropFilter: hasWallpaper ? 'blur(16px)' : undefined,
+                }}
               >
-                <div className={`w-10 h-10 mx-auto rounded-xl bg-gradient-to-br ${util.gradient} flex items-center justify-center shadow-md mb-2`}>
-                  <util.icon className="w-5 h-5 text-white" />
+                <div className="flex justify-center mb-2">
+                  <IconTile mode={util} theme={theme} iconStyle={iconStyle} size="sm" hasWallpaper={hasWallpaper} />
                 </div>
                 <span className="text-xs font-medium opacity-80">{util.name}</span>
               </Link>

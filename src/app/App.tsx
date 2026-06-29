@@ -199,6 +199,21 @@ function AppContent() {
     }
   };
 
+  const handleApplyIconPack = (iconPack: string) => {
+    setCustomization(prev => {
+      const updated = { ...prev, iconPack };
+      saveLocalCustomization(updated);
+      return updated;
+    });
+
+    if (user) {
+      supabase.from('user_customizations').upsert({
+        item_type: 'iconPack',
+        item_id: iconPack,
+      });
+    }
+  };
+
   const handleToggleInstall = async (itemId: string, itemType: string) => {
     const isInstalled = customization.installedItems.has(itemId);
 
@@ -271,6 +286,8 @@ function AppContent() {
                 <Home
                   theme={activeTheme}
                   savedScans={savedScans}
+                  iconPack={customization.iconPack}
+                  wallpaper={customization.wallpaper}
                 />
               } />
               <Route path="/scan" element={
@@ -301,6 +318,8 @@ function AppContent() {
                   onApplyWallpaper={handleApplyWallpaper}
                   font={customization.font}
                   onApplyFont={handleApplyFont}
+                  iconPack={customization.iconPack}
+                  onApplyIconPack={handleApplyIconPack}
                 />
               } />
               <Route path="/settings" element={
