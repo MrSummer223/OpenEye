@@ -19,7 +19,7 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
   const [scannedText, setScannedText] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const { videoRef, status: camStatus, error: camError, startCamera, stopCamera, captureFrame, torchSupported, torchOn, toggleTorch } = useCamera();
-  const { status: ocrStatus, progress, error: ocrError, recognize } = useOCR();
+  const { status: ocrStatus, progress, error: ocrError, recognize, ocrMethod } = useOCR();
 
   const isScanning = ocrStatus === 'running';
 
@@ -229,7 +229,14 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
             >
               <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold opacity-70">Recognized Text</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold opacity-70">Recognized Text</span>
+                    {ocrMethod && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${ocrMethod === 'ai' ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                        {ocrMethod === 'ai' ? 'AI' : 'Tesseract'}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <motion.button whileTap={{ scale: 0.85 }} onClick={handleSave} title="Save" className="p-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors">
                       <Save className="w-4 h-4" />
