@@ -6,7 +6,7 @@
  * QUICK START
  * -----------
  * 1. Unzip this folder
- * 2. Run:  npm install   (or pnpm install / yarn)
+ * 2. Run:  npm install
  * 3. Run:  npm run dev
  * 4. Open: http://localhost:5173
  *
@@ -14,12 +14,14 @@
  * DEPENDENCIES (already in package.json)
  * ----------------------------------------
  * Runtime:
- *   lucide-react    — all icons throughout the app
- *   motion          — all animations (import from "motion/react")
- *   react-router    — navigation between screens
- *   clsx            — conditional class merging
- *   tailwind-merge  — Tailwind class deduplication
- *   tw-animate-css  — extra Tailwind animation utilities
+ *   lucide-react        — icons throughout the app
+ *   motion              — animations (import from "motion/react")
+ *   react-router        — navigation between screens
+ *   clsx                — conditional class merging
+ *   tailwind-merge      — Tailwind class deduplication
+ *   tw-animate-css      — extra Tailwind animation utilities
+ *   tesseract.js        — OCR fallback engine
+ *   @supabase/supabase-js — auth and database
  *
  * Dev / Build:
  *   vite + @vitejs/plugin-react
@@ -33,97 +35,92 @@
  *   main.tsx                          — React entry point
  *   app/
  *     App.tsx                         — Root: routing, shared state
- *                                       (theme, brightness, darkMode,
- *                                        savedScans, flashlight)
  *     components/
- *       Home.tsx                      — Home screen
- *                                       • Live ticking clock
- *                                       • Mode cards (Scan/Translate/Read)
- *                                       • Stats driven by real savedScans
- *       ScanMode.tsx                  — Scan screen
- *                                       • Mock scan with 3 rotating results
- *                                       • Copy to clipboard (Clipboard API)
- *                                       • Share (Web Share API)
- *                                       • Save / Delete (persists to App state)
- *                                       • Toast notifications
+ *       Home.tsx                      — Home screen with clock and mode cards
+ *       ScanMode.tsx                  — Camera + real OCR text extraction
+ *                                       • AI OCR via Supabase Edge Function
+ *                                       • Tesseract.js fallback
+ *                                       • Shows AI/Tesseract badge
  *       TranslationMode.tsx           — Translation screen
- *                                       • 3 input tabs: Camera / Photo / Type
- *                                       • Type tab: textarea + mock translate engine
- *                                       • Language swap with animated button
- *                                       • SpeechSynthesis read-aloud for both panels
- *                                       • Recent translations list (clickable)
+ *                                       • Camera / Photo / Type input tabs
+ *                                       • Speech synthesis read-aloud
  *       ReadingMode.tsx               — Reading screen
- *                                       • Word-by-word highlight as text plays
- *                                       • Progress bar synced to word position
- *                                       • Play / Pause / Restart / Skip Forward
- *                                       • Speed & font-size sliders (apply live)
- *                                       • SpeechSynthesis TTS
- *                                       • History items are clickable/loadable
- *       CustomizationScreen.tsx       — App Store–style Catalog
- *                                       • Animated splash screen → store home
- *                                       • Featured / Categories / New tabs
- *                                       • Get/install toggle per item
- *                                       • 8 category detail screens
+ *                                       • Word-by-word highlight
+ *                                       • Speed & font-size controls
+ *       CustomizationScreen.tsx       — Theme presets and personalization
  *       SystemSettings.tsx            — Settings screen
- *                                       • Brightness slider → dims entire device
- *                                       • Dark Mode toggle → flips app light/dark
- *                                       • Notifications toggle
- *                                       • Developer Mode toggle + live debug panel
- *                                       • Wi-Fi / Language expandable pickers
- *                                       • Factory Reset with confirmation step
+ *       AuthScreen.tsx                — Login/signup with Supabase Auth
+ *   hooks/
+ *     useCamera.ts                    — Camera access, capture, torch toggle
+ *     useOCR.ts                       — AI + Tesseract OCR with text cleaning
+ *   lib/
+ *     supabase.ts                     — Supabase client
+ *     auth.tsx                        — Auth context and session management
  *   styles/
  *     index.css     — imports fonts + tailwind + theme
- *     tailwind.css  — Tailwind v4 setup + tw-animate-css
- *     theme.css     — CSS variables (--background, --foreground, etc.)
- *     fonts.css     — Google Fonts imports (add fonts here)
+ *     tailwind.css  — Tailwind v4 setup
+ *     theme.css     — CSS variables
+ *     fonts.css     — Google Fonts imports
+ *
+ * supabase/
+ *   functions/ocr-ai/index.ts         — Edge function for AI OCR
+ *                                       • Calls OpenAI GPT-4o-mini Vision
+ *                                       • Requires OPENAI_API_KEY secret
+ *   migrations/                       — Database schema
+ *
+ *
+ * OCR SYSTEM (useOCR.ts)
+ * -----------------------
+ * Primary: AI OCR (GPT-4o-mini Vision)
+ *   • High accuracy text extraction
+ *   • Preserves formatting and spacing
+ *   • Returns null for blank/no-text images
+ *   • Requires OPENAI_API_KEY in Edge Function secrets
+ *
+ * Fallback: Tesseract.js
+ *   • Multi-pass recognition (PSM 3 & 6)
+ *   • Artifact/symbol filtering
+ *   • Confidence-based result selection
+ *   • Works offline, less accurate
  *
  *
  * SHARED STATE (App.tsx)
  * -----------------------
- * flashlightOn   boolean       — yellow overlay on device frame
- * brightness     number 10–100 — CSS brightness() filter on frame
- * darkMode       boolean       — switches activeTheme light ↔ dark
- * theme          object        — { backgroundColor, primaryColor,
- *                                  accentColor, textColor }
- *                               changed by CustomizationScreen presets
- * savedScans     Scan[]        — shared between ScanMode and Home stats
+ * session        Session | null   — Supabase auth session
+ * theme          object          — { backgroundColor, primaryColor,
+ *                                   accentColor, textColor }
+ * savedScans     Scan[]          — Persisted scan history
+ * brightness     number 10-100   — Screen brightness
+ * darkMode       boolean         — Dark/light theme toggle
  *
  *
  * ANIMATION PATTERNS
  * -------------------
- * All animations use  motion  from "motion/react".
+ * All animations use motion from "motion/react".
  *
- * App / screen transitions  → x: 40→0, opacity 0→1  (slide in from right)
- * Home header               → y: -24→0               (slide down)
- * Home clock                → scale: 0.92→1          (pop in)
- * Mode cards                → x: -32→0 staggered     (sweep from left)
- * Stats                     → y: 24→0 + scale pop
- * Settings rows             → x: -24→0 staggered
- * Catalog splash            → scale 0.4→1 logo, loading dots pulse
- * Catalog home              → opacity + scale 0.97→1
- * Catalog cards             → y: 20→0 staggered (containerVariants)
- * Category detail           → x: 100%→0 slide push
- * Result panels             → height: 0→auto + opacity (AnimatePresence)
- * Toggle switches           → spring x translate (thumb)
- * whileTap                  → scale: 0.88–0.97 on all buttons
+ * Screen transitions    → x: 40→0, opacity 0→1
+ * Home clock            → scale: 0.92→1
+ * Mode cards            → x: -32→0 staggered
+ * Settings rows         → x: -24→0 staggered
+ * Result panels         → height: 0→auto + opacity
+ * Toggle switches       → spring x translate
+ * whileTap              → scale: 0.88–0.97 on buttons
  *
  *
  * BROWSER APIs USED
  * ------------------
  * navigator.clipboard.writeText()  — copy scanned text
- * navigator.share()                — share scanned text (mobile)
- * window.speechSynthesis           — read-aloud in Translation + Reading
+ * navigator.share()                — share text (mobile)
+ * window.speechSynthesis           — read-aloud TTS
+ * navigator.mediaDevices           — camera access
  *
  *
- * CUSTOMISING
- * ------------
- * • Change colour themes   → edit presetThemes in CustomizationScreen.tsx
- *                            or theme initial state in App.tsx
- * • Add a new screen       → create component, add <Route> in App.tsx,
- *                            add a card to Home.tsx modes array
- * • Change fonts           → add @import to src/styles/fonts.css
- * • Change device size     → edit w-[380px] h-[780px] in App.tsx
+ * CONFIGURING AI OCR
+ * -------------------
+ * 1. Get OpenAI API key from https://platform.openai.com/api-keys
+ * 2. In Supabase dashboard: Edge Functions → ocr-ai → Settings → Secrets
+ * 3. Add OPENAI_API_KEY with your key
  *
+ * Without the key, Tesseract.js will be used (works but less accurate).
  */
-
 export {};
