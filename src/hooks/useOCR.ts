@@ -5,8 +5,87 @@ export type OcrStatus = 'idle' | 'running' | 'done' | 'error';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
+// Check if a character is a common OCR artifact symbol
+function isArtifactChar(char: string): boolean {
+  const artifacts = ['|', '~', '^', '`', '´', '¨', '¯', '¸', 'ÿ', '€', '', '‚', '„', '†', '‡', '•', '…', '‰', '‹', '›', '€', '™', 'ﬁ', 'ﬂ', '­', '͏', '‌', '‍', '‌'];
+  return artifacts.includes(char);
+}
+
+// Clean OCR text by removing artifacts and filtering garbage
+function cleanOcrText(text: string, confidence: number): string | null {
+  if (!text || text.length < 2) return null;
+
+  const lines = text.split('\n');
+
+  const cleanedLines = lines
+    .map(line => {
+      let cleaned = line.trim();
+
+      // Remove common OCR artifacts
+      cleaned = cleaned.replace(/[|~^`´¨¯¸ÿ€‚„†‡•…‰‹›™ﬁﬂ­͏‌‍]/g, '');
+
+      // Remove sequences of the same repeating character (garbage patterns)
+      cleaned = cleaned.replace(/([^\s])\1{4,}/g, '');
+
+      // Remove standalone symbols
+      cleaned = cleaned.replace(/\s[^\w\s]\s/g, ' ');
+
+      // Clean up multiple spaces
+      cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+
+      return cleaned;
+    })
+    .filter(line => {
+      if (!line || line.length < 2) return false;
+
+      // Count character types
+      const letters = (line.match(/[a-zA-Z]/g) || []).length;
+      const numbers = (line.match(/[0-9]/g) || []).length;
+      const spaces = (line.match(/\s/g) || []).length;
+      const symbols = line.length - letters - numbers - spaces;
+
+      const totalChars = line.length - spaces;
+      if (totalChars === 0) return false;
+
+      const symbolRatio = symbols / totalChars;
+      const letterRatio = letters / totalChars;
+
+      // Keep lines that have reasonable content
+      // Must have some letters or numbers, and not too many symbols
+      if (totalChars < 3 && symbols > 0) return false;
+      if (symbolRatio > 0.5) return false; // More than 50% symbols = likely garbage
+      if (letters + numbers < 2) return false; // Need at least 2 alphanumeric chars
+
+      // Specific checks for common garbage patterns
+      const garbagePatterns = [
+        /^[^\w]*$/, // Only symbols
+        /^[AI1|]{3,}$/i, // Repeating I/1/|/A
+        /^[O0]{3,}$/i, // Repeating O/0
+        /^[WwMmNn]{3,}$/, // Repeating W/M/N
+        /^\W+\w?\W+$/, // Symbol-word-symbol with tiny word
+      ];
+
+      for (const pattern of garbagePatterns) {
+        if (pattern.test(line)) return false;
+      }
+
+      return true;
+    });
+
+  if (cleanedLines.length === 0) return null;
+
+  const result = cleanedLines.join('\n').trim();
+
+  // Final check: result should be mostly useful content
+  const totalLetters = (result.match(/[a-zA-Z]/g) || []).length;
+  const totalNumbers = (result.match(/[0-9]/g) || []).length;
+
+  if (totalLetters + totalNumbers < 3) return null;
+
+  return result;
+}
+
 async function callAIOCR(canvas: HTMLCanvasElement): Promise<{ text: string | null; error?: string }> {
-  // Convert canvas to base64
   const base64 = canvas.toDataURL('image/jpeg', 0.85);
 
   try {
@@ -23,47 +102,49 @@ async function callAIOCR(canvas: HTMLCanvasElement): Promise<{ text: string | nu
 
     const data = await response.json();
     return { text: data.text, error: data.error };
-  } catch (e) {
+  } catch {
     return { text: null, error: 'Failed to reach OCR service' };
   }
 }
 
 async function callTesseract(canvas: HTMLCanvasElement): Promise<{ text: string | null; error?: string }> {
   try {
-    const result = await Tesseract.recognize(canvas, 'eng', {
-      tessedit_pageseg_mode: '3' as any,
-    });
+    // Try with multiple PSM modes for better results
+    const results: { text: string; confidence: number }[] = [];
 
-    const text = result.data.text?.trim() || null;
+    // PSM 3 = Fully automatic (default)
+    // PSM 6 = Single uniform block
+    // PSM 4 = Single column of text
+    const psmModes = ['3', '6'] as const;
 
-    if (!text || text.length < 2) {
+    for (const psm of psmModes) {
+      try {
+        const result = await Tesseract.recognize(canvas, 'eng', {
+          tessedit_pageseg_mode: psm as any,
+        });
+
+        const text = result.data.text?.trim();
+        const confidence = result.data.confidence || 0;
+
+        if (text && confidence > 20) {
+          const cleaned = cleanOcrText(text, confidence);
+          if (cleaned) {
+            results.push({ text: cleaned, confidence });
+          }
+        }
+      } catch {
+        // Continue to next PSM mode
+      }
+    }
+
+    if (results.length === 0) {
       return { text: null, error: 'No text detected' };
     }
 
-    // Filter out low-quality results
-    const confidence = result.data.confidence || 0;
-    if (confidence < 25) {
-      return { text: null, error: 'Text not clear - try better lighting' };
-    }
+    // Pick the result with highest confidence
+    const best = results.reduce((a, b) => a.confidence > b.confidence ? a : b);
 
-    // Clean up the text
-    const cleaned = text
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .filter(line => {
-        // Filter garbage lines
-        const symbols = line.replace(/[a-zA-Z0-9\s.,!?'"-:;()]/g, '').length;
-        const ratio = symbols / line.length;
-        return ratio < 0.4; // Keep lines with less than 40% symbols
-      })
-      .join('\n');
-
-    if (!cleaned || cleaned.length < 2) {
-      return { text: null, error: 'No text detected' };
-    }
-
-    return { text: cleaned };
+    return { text: best.text };
   } catch (e: any) {
     return { text: null, error: e?.message || 'OCR failed' };
   }
@@ -87,7 +168,8 @@ export function useOCR() {
       // Handle string (image path) - use Tesseract only
       if (typeof source === 'string') {
         setProgress(20);
-        const result = await callTesseract(await createCanvasFromURL(source));
+        const canvas = await createCanvasFromURL(source);
+        const result = await callTesseract(canvas);
 
         if (abortRef.current) return null;
 
@@ -117,13 +199,6 @@ export function useOCR() {
         setProgress(100);
         setOcrMethod('ai');
         return aiResult.text;
-      }
-
-      // AI didn't return text - check if it's configured
-      if (aiResult.error?.includes('not configured')) {
-        console.log('AI OCR not configured, using Tesseract fallback');
-      } else {
-        console.log('AI OCR returned no text:', aiResult.error);
       }
 
       // Fallback to Tesseract
