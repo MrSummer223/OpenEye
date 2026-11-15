@@ -7,6 +7,7 @@ import { ReadingMode } from './components/ReadingMode';
 import { CustomizationScreen } from './components/CustomizationScreen';
 import { SystemSettings } from './components/SystemSettings';
 import { AuthScreen } from './components/AuthScreen';
+import { EFFECT_NAMES, EffectName, EffectsLayer, getEffectFrameStyle } from './components/EffectsLayer';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { Loader as Loader2 } from 'lucide-react';
@@ -85,8 +86,13 @@ function AppContent() {
   const [customization, setCustomization] = useState<AppCustomization>(loadLocalCustomization);
   const [savedScans, setSavedScans] = useState<Scan[]>(loadLocalScans);
   const [dataLoading, setDataLoading] = useState(true);
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
   const activeTheme = customization.theme;
+  const activeEffect = (EFFECT_NAMES.find(n => customization.installedItems.has(n)) ?? null) as EffectName | null;
+  const backgroundPosition = activeEffect === 'Parallax Scroll'
+    ? `${50 + parallax.x * 20}% ${50 + parallax.y * 20}%`
+    : 'center';
 
   useEffect(() => {
     setDataLoading(false);
@@ -216,6 +222,9 @@ function AppContent() {
 
   const handleToggleInstall = async (itemId: string, itemType: string) => {
     const isInstalled = customization.installedItems.has(itemId);
+    const replacedEffects = itemType === 'effect' && !isInstalled
+      ? EFFECT_NAMES.filter(n => n !== itemId && customization.installedItems.has(n))
+      : [];
 
     setCustomization(prev => {
       const newItems = new Set(prev.installedItems);
@@ -224,6 +233,7 @@ function AppContent() {
       } else {
         newItems.add(itemId);
       }
+      replacedEffects.forEach(name => newItems.delete(name));
       const updated = { ...prev, installedItems: newItems };
       saveLocalCustomization(updated);
       return updated;
@@ -235,6 +245,11 @@ function AppContent() {
           .eq('item_type', itemType)
           .eq('item_id', itemId);
       } else {
+        if (replacedEffects.length > 0) {
+          await supabase.from('user_customizations').delete()
+            .eq('item_type', 'effect')
+            .in('item_id', replacedEffects);
+        }
         await supabase.from('user_customizations').insert({
           item_type: itemType,
           item_id: itemId,
@@ -275,12 +290,22 @@ function AppContent() {
             backgroundColor: activeTheme.backgroundColor,
             backgroundImage: customization.wallpaper || undefined,
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition,
             fontFamily: customization.font,
             filter: `brightness(${0.4 + (brightness / 100) * 0.65})`,
+            ...getEffectFrameStyle(activeEffect, activeTheme.primaryColor),
+          }}
+          onPointerMove={e => {
+            if (activeEffect !== 'Parallax Scroll') return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            setParallax({
+              x: (e.clientX - rect.left) / rect.width - 0.5,
+              y: (e.clientY - rect.top) / rect.height - 0.5,
+            });
           }}
         >
-          <div className="size-full flex flex-col">
+          <EffectsLayer effect={activeEffect} primaryColor={activeTheme.primaryColor} />
+          <div className="size-full flex flex-col relative z-10">
             <Routes>
               <Route path="/" element={
                 <Home
