@@ -98,8 +98,8 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 text-sm font-semibold whitespace-nowrap"
-            style={{ color: theme.textColor }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-black/75 text-sm font-medium whitespace-nowrap"
+            style={{ color: '#ffffff' }}
           >
             <CheckCheck className="w-4 h-4 text-green-400" />
             {toast}
@@ -111,10 +111,10 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
       <motion.div
         {...slideUp}
         transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center justify-between p-4 border-b border-white/10"
+        className="flex items-center justify-between p-4"
       >
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+          <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
@@ -126,10 +126,10 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
           whileTap={{ scale: 0.88 }}
           onClick={() => toggleTorch()}
           disabled={!torchSupported}
-          className={`p-2 rounded-full transition-colors shadow-lg ${
-            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+          className={`p-2 rounded-full transition-colors ${
+            !torchSupported ? 'bg-white/5 opacity-30 cursor-not-allowed'
             : torchOn ? 'bg-yellow-400 text-gray-900'
-            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+            : 'bg-white/10 hover:bg-white/20'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>
@@ -156,7 +156,7 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
             <AnimatePresence mode="wait">
               {camStatus === 'requesting' && (
                 <motion.div key="req" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center z-10">
-                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
                   <p className="text-sm opacity-70">Requesting camera…</p>
                 </motion.div>
               )}
@@ -169,10 +169,10 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
               )}
               {isScanning && (
                 <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
-                  <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                  <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4" />
                   <p className="text-sm font-semibold">Analyzing text… {progress}%</p>
                   <div className="w-32 h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                    <div className="h-full bg-white rounded-full transition-all" style={{ width: `${progress}%` }} />
                   </div>
                 </motion.div>
               )}
@@ -186,18 +186,18 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
 
             {/* Scan corner guides */}
             {camStatus === 'active' && (
-              <div className="absolute inset-8 border-2 border-blue-500/60 rounded-xl pointer-events-none z-20">
+              <div className="absolute inset-8 border-2 border-white/50 rounded-xl pointer-events-none z-20">
                 {[
                   'top-0 left-0 border-t-4 border-l-4 -mt-1 -ml-1',
                   'top-0 right-0 border-t-4 border-r-4 -mt-1 -mr-1',
                   'bottom-0 left-0 border-b-4 border-l-4 -mb-1 -ml-1',
                   'bottom-0 right-0 border-b-4 border-r-4 -mb-1 -mr-1',
                 ].map((cls, i) => (
-                  <div key={i} className={`absolute w-6 h-6 border-blue-400 ${cls}`} />
+                  <div key={i} className={`absolute w-6 h-6 border-white ${cls}`} />
                 ))}
                 {/* Animated scan line */}
                 <motion.div
-                  className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent"
+                  className="absolute left-0 right-0 h-0.5 bg-white/80"
                   animate={{ top: ['0%', '100%', '0%'] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 />
@@ -211,7 +211,8 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
             whileTap={{ scale: 0.96 }}
             onClick={handleScan}
             disabled={isScanning || camStatus !== 'active'}
-            className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+            style={{ backgroundColor: theme.primaryColor }}
+            className="w-full mt-4 py-4 rounded-xl text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
           >
             {isScanning ? `Scanning… ${progress}%` : scannedText ? 'Scan Again' : 'Capture & Scan'}
           </motion.button>
@@ -227,12 +228,12 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="px-4 overflow-hidden"
             >
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-4">
+              <div className="p-4 rounded-xl bg-white/5 mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold opacity-70">Recognized Text</span>
                     {ocrMethod && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${ocrMethod === 'ai' ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${'bg-white/10'}`}>
                         {ocrMethod === 'ai' ? 'AI' : 'Tesseract'}
                       </span>
                     )}
@@ -286,7 +287,7 @@ export function ScanMode({ theme, savedScans, onSaveScan, onDeleteScan }: ScanMo
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: 20, opacity: 0, height: 0, marginBottom: 0 }}
                   transition={{ delay: i === 0 ? 0 : 0.28 + i * 0.06, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                  className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">

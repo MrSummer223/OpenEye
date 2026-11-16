@@ -35,9 +35,9 @@ const CATEGORIES = [
 ];
 
 const FEATURED = [
-  { id: 'themes', name: 'Midnight Pro', subtitle: 'Premium Theme Pack', rating: 4.9, downloads: '12K', gradient: 'from-indigo-600 via-purple-600 to-pink-600', tag: 'HOT', icon: Crown },
-  { id: 'effects', name: 'Glass UI Kit', subtitle: 'Frosted Glass Effects', rating: 4.8, downloads: '8.4K', gradient: 'from-cyan-500 via-blue-500 to-indigo-500', tag: 'NEW', icon: Shield },
-  { id: 'wallpapers', name: 'Cosmic Series', subtitle: '24 Space Wallpapers', rating: 4.7, downloads: '15K', gradient: 'from-gray-900 via-purple-900 to-indigo-900', tag: 'TOP', icon: Zap },
+  { id: 'themes', name: 'Midnight Pro', subtitle: 'Premium Theme Pack', rating: 4.9, downloads: '12K', gradient: 'from-sky-600 via-blue-600 to-teal-500', tag: 'HOT', icon: Crown },
+  { id: 'effects', name: 'Glass UI Kit', subtitle: 'Frosted Glass Effects', rating: 4.8, downloads: '8.4K', gradient: 'from-cyan-500 via-sky-500 to-blue-600', tag: 'NEW', icon: Shield },
+  { id: 'wallpapers', name: 'Cosmic Series', subtitle: '24 Space Wallpapers', rating: 4.7, downloads: '15K', gradient: 'from-slate-900 via-slate-800 to-blue-900', tag: 'TOP', icon: Zap },
 ];
 
 const PRESETS = [
@@ -61,14 +61,14 @@ const WALLPAPERS = [
 ];
 
 const DESIGNS = [
-  { name: 'Gradient Wave', gradient: 'from-blue-500 via-purple-500 to-pink-500' },
-  { name: 'Northern Lights', gradient: 'from-green-400 via-blue-500 to-purple-600' },
-  { name: 'Fire Ember', gradient: 'from-yellow-400 via-red-500 to-pink-600' },
-  { name: 'Ocean Breeze', gradient: 'from-cyan-400 via-blue-500 to-indigo-600' },
-  { name: 'Sunset Sky', gradient: 'from-orange-400 via-pink-500 to-purple-600' },
+  { name: 'Gradient Wave', gradient: 'from-sky-500 via-blue-500 to-cyan-500' },
+  { name: 'Northern Lights', gradient: 'from-emerald-400 via-teal-500 to-blue-600' },
+  { name: 'Fire Ember', gradient: 'from-amber-400 via-orange-500 to-red-500' },
+  { name: 'Ocean Breeze', gradient: 'from-cyan-400 via-sky-500 to-blue-600' },
+  { name: 'Sunset Sky', gradient: 'from-amber-400 via-orange-400 to-rose-500' },
   { name: 'Forest Mist', gradient: 'from-emerald-400 via-teal-500 to-cyan-600' },
   { name: 'Rose Gold', gradient: 'from-pink-300 via-rose-400 to-amber-400' },
-  { name: 'Galaxy Black', gradient: 'from-gray-900 via-purple-900 to-gray-900' },
+  { name: 'Galaxy Black', gradient: 'from-slate-900 via-slate-800 to-slate-900' },
 ];
 
 const FONTS = [
@@ -170,12 +170,12 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           {/* Logo ring */}
           <div className="relative w-24 h-24">
             <motion.div
-              className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
+              className="absolute inset-0 rounded-[28px] bg-sky-500"
               animate={{ rotate: [0, 360] }}
               transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
               style={{ filter: 'blur(12px)', opacity: 0.6 }}
             />
-            <div className="relative w-24 h-24 rounded-[28px] bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center shadow-2xl">
+            <div className="relative w-24 h-24 rounded-[28px] bg-sky-500 flex items-center justify-center shadow-lg">
               <Palette className="w-12 h-12 text-white" />
             </div>
           </div>
@@ -507,7 +507,7 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
       >
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-white/10">
-          <button onClick={() => setScreen('home')} className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+          <button onClick={() => setScreen('home')} className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
@@ -544,17 +544,17 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
           transition={{ delay: 0.1, duration: 0.4 }}
           className="flex items-center gap-3 px-4 pt-4 pb-3"
         >
-          <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+          <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
             <p className="font-bold text-lg">OpenEye Store</p>
             <p className="text-xs opacity-40">Customization Catalog</p>
           </div>
-          <button className="p-2 rounded-full bg-gradient-to-br from-indigo-500/80 to-purple-500/80 hover:from-indigo-500 hover:to-purple-500 text-white transition-colors shadow-lg">
+          <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
             <Search className="w-5 h-5" />
           </button>
-          <button className="p-2 rounded-full bg-gradient-to-br from-pink-500/80 to-rose-500/80 hover:from-pink-500 hover:to-rose-500 text-white transition-colors shadow-lg">
+          <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
             <Bell className="w-5 h-5" />
           </button>
         </motion.div>
@@ -602,7 +602,7 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
                       key={item.id}
                       variants={itemVariants}
                       onClick={() => { setSelectedCategory(item.id); setScreen('category'); }}
-                      className={`w-full rounded-2xl overflow-hidden bg-gradient-to-r ${item.gradient} p-4 flex items-center gap-4 text-left shadow-lg cursor-pointer`}
+                      className={`w-full rounded-2xl overflow-hidden bg-gradient-to-r ${item.gradient} p-4 flex items-center gap-4 text-left cursor-pointer`}
                     >
                       <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                         <Icon className="w-7 h-7 text-white" />
@@ -734,10 +734,10 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
               animate="visible"
               className="p-4 space-y-3"
             >
-              <motion.div variants={itemVariants} className="p-3 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
+              <motion.div variants={itemVariants} className="p-3 rounded-2xl bg-white/5">
                 <div className="flex items-center gap-2 mb-1">
-                  <Zap className="w-4 h-4 text-indigo-400" />
-                  <span className="text-sm font-bold text-indigo-300">What's New</span>
+                  <Zap className="w-4 h-4 text-sky-400" />
+                  <span className="text-sm font-bold text-sky-300">What's New</span>
                 </div>
                 <p className="text-xs opacity-60">Latest additions to the OpenEye Store</p>
               </motion.div>
@@ -757,7 +757,7 @@ export function CustomizationScreen({ theme, setTheme, installedItems, onToggleI
                     <div className="flex items-center gap-2 mt-1">
                       {['New', 'Updated'][i % 2] === 'New'
                         ? <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-semibold">NEW</span>
-                        : <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-semibold">UPDATED</span>
+                        : <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-semibold">UPDATED</span>
                       }
                     </div>
                   </div>

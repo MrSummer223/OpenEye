@@ -43,7 +43,7 @@ export function AuthScreen({ theme, onBack }: AuthScreenProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={onBack}
-          className="absolute top-4 left-4 p-3 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg"
+          className="absolute top-4 left-4 p-3 rounded-full hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
         </motion.button>
@@ -60,7 +60,8 @@ export function AuthScreen({ theme, onBack }: AuthScreenProps) {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring' }}
-            className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-xl"
+            className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+            style={{ backgroundColor: theme.primaryColor }}
           >
             <Eye className="w-10 h-10 text-white" />
           </motion.div>
@@ -135,7 +136,8 @@ export function AuthScreen({ theme, onBack }: AuthScreenProps) {
             transition={{ delay: 0.35, duration: 0.4 }}
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ backgroundColor: theme.primaryColor }}
+            className="w-full py-3.5 rounded-xl text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

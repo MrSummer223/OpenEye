@@ -118,8 +118,8 @@ export function TranslationMode({ theme }: TranslationModeProps) {
         {toast && (
           <motion.div
             initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -40, opacity: 0 }}
-            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 text-sm font-semibold whitespace-nowrap"
-            style={{ color: theme.textColor }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-black/75 text-sm font-medium whitespace-nowrap"
+            style={{ color: '#ffffff' }}
           >
             <CheckCheck className="w-4 h-4 text-blue-400" />
             {toast}
@@ -132,10 +132,10 @@ export function TranslationMode({ theme }: TranslationModeProps) {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center justify-between p-4 border-b border-white/10"
+        className="flex items-center justify-between p-4"
       >
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+          <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
@@ -147,10 +147,10 @@ export function TranslationMode({ theme }: TranslationModeProps) {
           whileTap={{ scale: 0.88 }}
           onClick={() => toggleTorch()}
           disabled={!torchSupported}
-          className={`p-2 rounded-full transition-colors shadow-lg ${
-            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+          className={`p-2 rounded-full transition-colors ${
+            !torchSupported ? 'bg-white/5 opacity-30 cursor-not-allowed'
             : torchOn ? 'bg-yellow-400 text-gray-900'
-            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+            : 'bg-white/10 hover:bg-white/20'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>
@@ -170,7 +170,8 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                 key={val}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setInputMode(val)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm ${inputMode === val ? 'bg-blue-500 text-white' : 'hover:bg-white/10'}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm ${inputMode === val ? 'text-white' : 'hover:bg-white/10'}`}
+                style={inputMode === val ? { backgroundColor: theme.primaryColor } : undefined}
               >
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>
@@ -190,7 +191,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
             <select
               value={sourceLang}
               onChange={e => setSourceLang(e.target.value)}
-              className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none text-sm"
+              className="flex-1 p-3 rounded-xl bg-white/5 outline-none text-sm"
               style={{ color: theme.textColor }}
             >
               {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.name}</option>)}
@@ -206,7 +207,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
             <select
               value={targetLang}
               onChange={e => setTargetLang(e.target.value)}
-              className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 outline-none text-sm"
+              className="flex-1 p-3 rounded-xl bg-white/5 outline-none text-sm"
               style={{ color: theme.textColor }}
             >
               {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.name}</option>)}
@@ -228,14 +229,15 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                 onChange={e => setTypedText(e.target.value)}
                 placeholder="Type or paste text to translate…"
                 rows={4}
-                className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 outline-none resize-none text-sm leading-relaxed focus:border-blue-500/50 transition-colors"
+                className="w-full p-4 rounded-2xl bg-white/5 outline-none resize-none text-sm leading-relaxed transition-colors"
                 style={{ color: theme.textColor }}
               />
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={handleTextTranslate}
                 disabled={isBusy || !typedText.trim()}
-                className="w-full mt-3 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
+                style={{ backgroundColor: theme.primaryColor }}
+                className="w-full mt-3 py-4 rounded-xl text-white font-semibold hover:brightness-110 transition-all disabled:opacity-40"
               >
                 {isBusy ? 'Translating…' : 'Translate'}
               </motion.button>
@@ -259,7 +261,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                 <AnimatePresence mode="wait">
                   {camStatus === 'requesting' && (
                     <motion.div key="req" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center z-10">
-                      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                      <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
                       <p className="text-sm opacity-70">Requesting camera…</p>
                     </motion.div>
                   )}
@@ -271,7 +273,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                   )}
                   {isBusy && (
                     <motion.div key="busy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
-                      <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                      <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4" />
                       <p className="text-sm font-semibold">
                         {isOcrRunning ? `Reading text… ${progress}%` : 'Translating…'}
                       </p>
@@ -286,7 +288,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                 </AnimatePresence>
 
                 {camStatus === 'active' && !isBusy && (
-                  <div className="absolute inset-8 border-2 border-blue-500/50 rounded-xl pointer-events-none z-20" />
+                  <div className="absolute inset-8 border-2 border-white/50 rounded-xl pointer-events-none z-20" />
                 )}
               </div>
 
@@ -294,7 +296,8 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                 whileTap={{ scale: 0.96 }}
                 onClick={handleCameraTranslate}
                 disabled={isBusy || camStatus !== 'active'}
-                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+                style={{ backgroundColor: theme.primaryColor }}
+                className="w-full mt-4 py-4 rounded-xl text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
               >
                 {isBusy ? (isOcrRunning ? `Scanning… ${progress}%` : 'Translating…') : 'Capture & Translate'}
               </motion.button>
@@ -335,7 +338,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
               ].map(({ label, text, lang, gradient }) => (
                 <div
                   key={label}
-                  className={`p-4 rounded-xl border ${gradient ? 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30' : 'bg-white/5 border-white/10'}`}
+                  className={`p-4 rounded-xl ${gradient ? 'bg-white/10' : 'bg-white/5'}`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold opacity-70 uppercase">
@@ -375,7 +378,7 @@ export function TranslationMode({ theme }: TranslationModeProps) {
                   exit={{ x: 20, opacity: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.3 }}
                   onClick={() => { setTypedText(t.text); setInputMode('text'); }}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-left"
+                  className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">

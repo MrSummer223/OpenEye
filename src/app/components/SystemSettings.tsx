@@ -61,7 +61,7 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
         transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center gap-3 p-4 border-b border-white/10"
       >
-        <Link to="/" className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+        <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </Link>
         <div className="flex-1">
@@ -73,7 +73,7 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={signOut}
-              className="p-2 rounded-full bg-gradient-to-br from-red-500/80 to-pink-500/80 hover:from-red-500 hover:to-pink-500 text-white transition-colors shadow-lg"
+              className="p-2 rounded-full bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
             >
               <LogOut className="w-5 h-5" />
             </motion.button>
@@ -90,9 +90,9 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
         >
           <h4 className="text-lg font-semibold mb-3">Account</h4>
           {user ? (
-            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+            <div className="p-4 rounded-xl bg-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: theme.primaryColor }}>
                   {user.email?.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
@@ -107,10 +107,10 @@ export function SystemSettings({ theme, brightness, setBrightness, darkMode, set
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={onOpenAuth}
-              className="w-full p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+              className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/80 to-cyan-500/80 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1 text-left">

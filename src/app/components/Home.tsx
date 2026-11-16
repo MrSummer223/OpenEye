@@ -58,16 +58,15 @@ function IconTile({
   hasWallpaper: boolean;
 }) {
   const primary = theme.primaryColor;
-  const accent = theme.accentColor;
   const iconSize = size === 'lg' ? 'w-7 h-7' : 'w-5 h-5';
   const container = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-11 h-11 rounded-xl';
 
   // Container: theme-driven gradient, with glass backdrop if wallpaper present
   const bg = iconStyle === 'minimal'
-    ? `linear-gradient(135deg, ${primary}18, ${accent}18)`
+    ? `${primary}22`
     : iconStyle === 'colorful'
-    ? `linear-gradient(135deg, hsl(${mode.hue} 80% 55%), hsl(${(mode.hue + 40) % 360} 75% 50%))`
-    : `linear-gradient(135deg, ${primary}, ${accent})`;
+    ? `hsl(${mode.hue} 70% 50%)`
+    : primary;
 
   const glyphColor = iconStyle === 'minimal' ? primary : '#ffffff';
   const strokeW = iconStyle === 'filled' || iconStyle === 'colorful' ? 2.5 : 1.75;
@@ -76,22 +75,8 @@ function IconTile({
   return (
     <div
       className={`${size === 'lg' ? 'w-14 h-14' : 'w-11 h-11'} ${radius} flex items-center justify-center shrink-0 relative overflow-hidden`}
-      style={{
-        background: bg,
-        boxShadow: iconStyle === 'minimal'
-          ? `inset 0 0 0 1px ${primary}30`
-          : `0 4px 14px ${primary}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
-        backdropFilter: hasWallpaper ? 'blur(12px)' : undefined,
-      }}
+      style={{ background: bg }}
     >
-      {/* Sheen */}
-      {iconStyle !== 'minimal' && (
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.3) 0%, transparent 50%)' }}
-        />
-      )}
-      {/* Detailed glyph: main icon + subtle detail icon overlay */}
       <div className="relative flex items-center justify-center">
         <mode.icon
           className={iconSize}
@@ -131,8 +116,7 @@ export function Home({ theme, savedScans, iconPack, wallpaper }: HomeProps) {
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{
-              background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
-              boxShadow: `0 2px 8px ${theme.primaryColor}40`,
+              background: theme.primaryColor,
             }}
           >
             <Eye className="w-5 h-5 text-white" strokeWidth={2} />

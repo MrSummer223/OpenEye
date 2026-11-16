@@ -109,10 +109,10 @@ export function ReadingMode({ theme }: ReadingModeProps) {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center justify-between p-4 border-b border-white/10"
+        className="flex items-center justify-between p-4"
       >
         <div className="flex items-center gap-3">
-          <Link to="/" onClick={stopReading} className="p-2 rounded-full bg-gradient-to-br from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white transition-colors shadow-lg">
+          <Link to="/" onClick={stopReading} className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
@@ -124,10 +124,10 @@ export function ReadingMode({ theme }: ReadingModeProps) {
           whileTap={{ scale: 0.88 }}
           onClick={() => toggleTorch()}
           disabled={!torchSupported}
-          className={`p-2 rounded-full transition-colors shadow-lg ${
-            !torchSupported ? 'bg-white/10 text-white/30 cursor-not-allowed'
+          className={`p-2 rounded-full transition-colors ${
+            !torchSupported ? 'bg-white/5 opacity-30 cursor-not-allowed'
             : torchOn ? 'bg-yellow-400 text-gray-900'
-            : 'bg-gradient-to-br from-blue-500/80 to-cyan-500/80 hover:from-blue-500 hover:to-cyan-500 text-white'}`}
+            : 'bg-white/10 hover:bg-white/20'}`}
         >
           <Flashlight className="w-5 h-5" />
         </motion.button>
@@ -211,7 +211,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                       <div key={i} className={`absolute w-5 h-5 border-green-400 ${pos.includes('top') ? 'border-t-4' : 'border-b-4'} ${pos.includes('left') ? 'border-l-4' : 'border-r-4'} ${pos}`} />
                     ))}
                     <motion.div
-                      className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent"
+                      className="absolute left-0 right-0 h-0.5 bg-white/80"
                       animate={{ top: ['0%', '100%', '0%'] }}
                       transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                     />
@@ -239,7 +239,8 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                 whileTap={{ scale: 0.96 }}
                 onClick={handleScan}
                 disabled={isOcrRunning || camStatus !== 'active'}
-                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+                style={{ backgroundColor: theme.primaryColor }}
+                className="w-full mt-4 py-4 rounded-xl text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50"
               >
                 {isOcrRunning ? `Scanning… ${progress}%` : 'Scan & Read'}
               </motion.button>
@@ -257,7 +258,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                         transition={{ delay: i * 0.06 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={() => loadFromHistory(item)}
-                        className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-left"
+                        className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left"
                       >
                         <p className="text-sm font-medium truncate">{item.title}</p>
                         <p className="text-xs opacity-50 mt-0.5">{item.time}</p>
@@ -277,7 +278,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
               {displayedText ? (
                 <>
                   {/* Controls */}
-                  <div className="mb-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div className="mb-4 p-4 rounded-xl bg-white/5">
                     {/* Playback */}
                     <div className="flex items-center justify-center gap-4 mb-4">
                       <motion.button whileTap={{ scale: 0.85 }} onClick={restart} className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
@@ -337,7 +338,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                   </div>
 
                   {/* Word-highlighted text */}
-                  <div className="p-5 rounded-xl bg-white/5 border border-white/10 min-h-[180px] leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
+                  <div className="p-5 rounded-xl bg-white/5 min-h-[180px] leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${textSize}px` }}>
                     {words.map((word, i) => (
                       <span key={i}>
                         <motion.span
@@ -357,7 +358,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={() => { stopReading(); setView('scan'); }}
-                    className="w-full mt-4 py-3 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 transition-all"
+                    className="w-full mt-4 py-3 rounded-xl bg-white/10 text-sm font-semibold hover:bg-white/20 transition-all"
                   >
                     Scan New Text
                   </motion.button>
@@ -397,7 +398,7 @@ export function ReadingMode({ theme }: ReadingModeProps) {
                   transition={{ delay: 0.34 + i * 0.07, duration: 0.35 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => loadFromHistory(item)}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-left"
+                  className="w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold truncate">{item.title}</span>
